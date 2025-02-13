@@ -13,6 +13,15 @@ services:
         networks:
             - blockchain-network
 
+    # rabbitmq
+    rabbitmq:
+        image: rabbitmq:latest
+        restart: always
+        ports:
+            - 5672:5672
+        networks:
+            - blockchain-network
+
     backend:
         build:
             dockerfile: ./Dockerfile.dev
