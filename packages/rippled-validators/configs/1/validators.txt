@@ -1,0 +1,4 @@
+[validators]
+    nHD9yVYysXd8Dd2CSjE4EcdXh1jRTynRUiZPTsLTijvHzgbVtj95
+    nHUv9aHnGFWL73htE217kafW9BfBFtfnjpC7s33x9i7jEfbTFjiR
+    nHBd4EtZ3uQcVkaR4Bu7Y9MqLCPL9NnaoD7rKEDK8nDGSkUod3AP
