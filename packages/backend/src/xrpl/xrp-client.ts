@@ -1,6 +1,6 @@
 // Methods to interact with the XRPL
 
-import { Client, Wallet, NFTokenMintFlags, convertStringToHex, NFTokenMint, NFTokenCreateOffer, Amount, NFTokenAcceptOffer, NFTokenCreateOfferFlags, SubmittableTransaction, TxResponse } from 'xrpl';
+import { Client, Wallet, NFTokenMint, NFTokenCreateOffer, Amount, NFTokenAcceptOffer, NFTokenCreateOfferFlags, SubmittableTransaction, TxResponse } from 'xrpl';
 import { XRPToken } from './xrp-token';
 
 interface IXRPClient {
@@ -27,7 +27,7 @@ interface IXRPClient {
         offerId: string,
     ): Promise<TxResponse<NFTokenAcceptOffer>>;
 
-    getAccountNFTs(accountAddress: string): Promise<Array<any>>;
+    getAccountTokens(accountAddress: string): Promise<Array<XRPToken>>;
     getAccountBalance(accountAddress: string): Promise<number>;
 }
 
@@ -101,7 +101,7 @@ export class XRPClient implements IXRPClient {
         return this.submitTransaction<NFTokenMint>({
             TransactionType: 'NFTokenMint',
             Account: issuerWallet.address,
-            URI: token.toHex(),
+            URI: token.encode(),
             NFTokenTaxon: 0, // Required field, can be any value from 0 to 2^32-1
             LastLedgerSequence: await this.client.getLedgerIndex() + 20,
             ...transactionOptions,
@@ -161,14 +161,16 @@ export class XRPClient implements IXRPClient {
      * @param {string} accountAddress - The account address to check
      * @returns {Promise<Array>} List of NFTokens owned by the account
      */
-    async getAccountNFTs(accountAddress: string): Promise<Array<any>> {
+    async getAccountTokens(accountAddress: string): Promise<Array<XRPToken>> {
         try {
             const response = await this.client.request({
                 command: 'account_nfts',
                 account: accountAddress
             });
 
-            return response.result.account_nfts;
+            return response.result.account_nfts.filter((token) => token.URI).map((token) => {
+                return new XRPToken(token);
+            });
         } catch (error) {
             console.error('Error getting account NFTs:', error);
             throw error;
