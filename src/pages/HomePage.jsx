@@ -1,7 +1,10 @@
 import MonkeyList from '@components/MonkeyList'
 import { Box, Button, Container, TextField, Typography } from '@mui/material'
+import { useNavigate } from 'react-router-dom'
 
 const HomePage = () => {
+  const navigate = useNavigate()
+
   return (
     <Box
       sx={{
@@ -25,6 +28,7 @@ const HomePage = () => {
           fontSize: { xs: '0.8rem', md: '1rem' },
           padding: { xs: '6px 12px', md: '8px 16px' },
         }}
+        onClick={() => navigate('/login')}
       >
         Login
       </Button>
