@@ -8,6 +8,12 @@ import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHt
 import http from 'http';
 import { typeDefs, resolvers } from './graphql';
 import logger from './utils/logger';
+import { User } from '@prisma/client';
+
+export type Context = {
+  req: express.Request;
+  user?: User;
+}
 
 async function createApolloServer(app: express.Application) {
   const httpServer = http.createServer(app);
@@ -31,8 +37,9 @@ async function createApolloServer(app: express.Application) {
     express.json(), 
     expressMiddleware(server, {
       context: async ({ req }) => {
+        // TODO: Add authentication logic here
         // You can add authentication logic here
-        return { req };
+        return { req, user: undefined };
       },
     }) as any
   );

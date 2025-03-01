@@ -12,14 +12,14 @@ export class XRPToken {
     private readonly tokenData: XRPTokenData;
 
     constructor(
-        public data: Omit<XRPTokenData, 'id'> | AccountNFToken | Item
+        public data: Omit<XRPTokenData, 'id'> | AccountNFToken | Omit<Item, 'id' | 'owner_id'>
     ) {
         if (this.isItem(data)) {
             this.tokenData = {
                 id: data.xrp_id ?? undefined,
                 name: data.name,
                 description: data.description,
-                image: data.image,
+                image: data.image_url,
             }
             return;
         }
@@ -63,12 +63,12 @@ export class XRPToken {
         return 'xrp_id' in data && 'owner_id' in data;
     }
 
-    public mapToItem(): Omit<Item, 'id' | 'owner_id'> {
+    public mapToItem(): Pick<Item, 'xrp_id' | 'name' | 'description' | 'image_url'> {
         return {
             xrp_id: this.tokenData.id ?? null,
             name: this.tokenData.name,
             description: this.tokenData.description,
-            image: this.tokenData.image.toString(),
+            image_url: this.tokenData.image.toString(),
         }
     }
     public encode() {

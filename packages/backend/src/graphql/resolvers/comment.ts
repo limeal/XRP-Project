@@ -1,4 +1,6 @@
+import { Context } from '../../app';
 import prisma from '../../prisma/client';
+import { Comment, EntityType } from '@prisma/client';
 
 const commentResolvers = {
   Query: {
@@ -12,35 +14,43 @@ const commentResolvers = {
     },
   },
   Mutation: {
-    createComment: async (_: any, { 
-      entity_type,
-      entity_id,
-      body
-    }: {
-      entity_type: string;
-      entity_id: string;
-      body: string;
-    }) => {
-      return await prisma.comment.create({
-        data: {
-          entity_type,
-          entity_id,
-          body
-        },
-      });
+    createComment: async (_: any, data: Omit<Comment, 'id'>, context: Context) => {
+      const user = context.user;
+      if (!user && data.entity_type === 'USER') {
+        throw new Error('User not found');
+      }
+
+      switch (data.entity_type) {
+        case EntityType.USER:
+          return prisma.user.update({
+            where: { id: data.entity_id },
+            data: {
+              comments: {
+                create: {
+                  body: data.body,
+                  entity_type: EntityType.USER,
+                },
+              },
+            },
+          });
+        case EntityType.ITEM:
+          return prisma.item.update({
+            where: { id: data.entity_id },
+            data: {
+              comments: {
+                create: {
+                  body: data.body,
+                  entity_type: EntityType.ITEM,
+                },
+              },
+            },
+          });
+      }
     },
-    updateComment: async (_: any, {
-      id,
-      body
-    }: {
-      id: string;
-      body?: string;
-    }) => {
+    updateComment: async (_: any, data: Partial<Omit<Comment, 'id'>> & { id: string }) => {
       return await prisma.comment.update({
-        where: { id },
-        data: {
-          ...(body && { body })
-        },
+        where: { id: data.id },
+        data,
       });
     },
     deleteComment: async (_: any, { id }: { id: string }) => {

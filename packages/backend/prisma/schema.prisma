@@ -13,52 +13,94 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum EntityType {
+  USER
+  ITEM
+}
+
 model User {
-  id            String    @id @default(uuid())
+  id String @id @default(uuid())
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
   username      String
   email         String    @unique
   password      String
-  xrp_address   String?
-  created_at    DateTime  @default(now())
-  updated_at    DateTime  @updatedAt
+  xrp_seed   String?
+
   last_login_at DateTime?
+  
+  // Relations
   items         Item[]
+  comments      Comment[] @relation("UserComment")
+  tags          Tag[] @relation("UserTag")
+
+  @@map("users")
 }
 
 model Item {
-  id          String      @id @default(uuid())
+  id String @id @default(uuid())
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
   name        String
   description String
+
   xrp_id      String?
-  image       String
+  image_url   String
+
+  // Relations
   owner_id    String
   owner       User        @relation(fields: [owner_id], references: [id])
+  
   prices      ItemPrice[]
-  comments    Comment[]
-  tags        Tag[]
+
+  comments    Comment[] @relation("ItemComment")
+  tags        Tag[] @relation("ItemTag")
+
+  @@map("items")
 }
 
-model ItemPrice {
-  id      String @id @default(uuid())
+model ItemPrice {  
+  id String @id @default(uuid())
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
   item_id String
   item    Item   @relation(fields: [item_id], references: [id])
   price   BigInt
+
+  offer_xrp_id String?
+
+  @@map("item_prices")
 }
 
 model Comment {
-  id          String  @id @default(uuid())
-  entity_type String
+  id String @id @default(uuid())
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  entity_type EntityType @default(ITEM)
   entity_id   String
   body        String
-  Item        Item?   @relation(fields: [itemId], references: [id])
-  itemId      String?
+
+  User User? @relation("UserComment", fields: [entity_id], references: [id], map: "user_comment_entityId")
+  Item Item? @relation("ItemComment", fields: [entity_id], references: [id], map: "item_comment_entityId")
+
+  @@map("comments")
 }
 
 model Tag {
-  id          String  @id @default(uuid())
-  entity_type String
+  id String @id @default(uuid())
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  entity_type EntityType @default(ITEM)
   entity_id   String
   title       String
-  Item        Item?   @relation(fields: [itemId], references: [id])
-  itemId      String?
+
+  Item Item? @relation("ItemTag", fields: [entity_id], references: [id], map: "item_tag_entityId")
+  User User? @relation("UserTag", fields: [entity_id], references: [id], map: "user_tag_entityId")
+
+  @@map("tags")
 }

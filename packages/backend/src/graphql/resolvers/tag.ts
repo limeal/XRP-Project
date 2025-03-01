@@ -1,4 +1,6 @@
+import { Tag } from '@prisma/client';
 import prisma from '../../prisma/client';
+import { Context } from '../../app';
 
 const tagResolvers = {
   Query: {
@@ -12,35 +14,20 @@ const tagResolvers = {
     },
   },
   Mutation: {
-    createTag: async (_: any, { 
-      entity_type,
-      entity_id,
-      title
-    }: {
-      entity_type: string;
-      entity_id: string;
-      title: string;
-    }) => {
+    createTag: async (_: any, data: Omit<Tag, 'id'>, context: Context) => {
+      const user = context.user;
+      if (!user) {
+        throw new Error('User not found');
+      }
+
       return await prisma.tag.create({
-        data: {
-          entity_type,
-          entity_id,
-          title
-        },
+        data,
       });
     },
-    updateTag: async (_: any, {
-      id,
-      title
-    }: {
-      id: string;
-      title?: string;
-    }) => {
+    updateTag: async (_: any, data: Partial<Omit<Tag, 'id'>> & { id: string }) => {
       return await prisma.tag.update({
-        where: { id },
-        data: {
-          ...(title && { title })
-        },
+        where: { id: data.id },
+        data,
       });
     },
     deleteTag: async (_: any, { id }: { id: string }) => {

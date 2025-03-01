@@ -1,4 +1,8 @@
+import { EntityType, Item } from '@prisma/client';
 import prisma from '../../prisma/client';
+import { XRPClient } from '../../xrpl/xrp-client';
+import { Context } from '../../app';
+import { XRPToken } from '../../xrpl/xrp-token';
 
 const itemResolvers = {
   Query: {
@@ -19,17 +23,17 @@ const itemResolvers = {
     },
     comments: async (parent: any) => {
       return await prisma.comment.findMany({
-        where: { 
-          entity_type: 'ITEM',
-          entity_id: parent.id 
+        where: {
+          entity_type: EntityType.ITEM,
+          entity_id: parent.id
         },
       });
     },
     tags: async (parent: any) => {
       return await prisma.tag.findMany({
-        where: { 
-          entity_type: 'ITEM',
-          entity_id: parent.id 
+        where: {
+          entity_type: EntityType.ITEM,
+          entity_id: parent.id
         },
       });
     },
@@ -40,54 +44,31 @@ const itemResolvers = {
     },
   },
   Mutation: {
-    createItem: async (_: any, { 
-      name,
-      description,
-      xrp_id,
-      image,
-      owner_id
-    }: {
-      name: string;
-      description: string;
-      xrp_id?: string;
-      image: string;
-      owner_id: string;
-    }) => {
-      // TODO: Call createNFTToken
-      return await prisma.item.create({
+    createItem: async (_: any, data: Omit<Item, 'id' | 'owner_id'>, context: Context) => {
+      const user = context.user;
+      if (!user || !user.xrp_seed) {
+        throw new Error('User not found');
+      }
+
+      const xrpClient = new XRPClient();
+      const token = await xrpClient.createNFTToken(user.xrp_seed, new XRPToken(data));
+
+      return prisma.item.create({
         data: {
-          name,
-          description,
-          xrp_id,
-          image,
-          owner_id
+          ...data,
+          xrp_id: `${token.id}`,
+          owner: {
+            connect: {
+              id: user?.id
+            }
+          }
         },
       });
     },
-    updateItem: async (_: any, {
-      id,
-      name,
-      description,
-      xrp_id,
-      image,
-      owner_id
-    }: {
-      id: string;
-      name?: string;
-      description?: string;
-      xrp_id?: string;
-      image?: string;
-      owner_id?: string;
-    }) => {
+    updateItem: async (_: any, data: Partial<Omit<Item, 'id' | 'owner_id'>> & { id: string }) => {
       return await prisma.item.update({
-        where: { id },
-        data: {
-          ...(name && { name }),
-          ...(description && { description }),
-          ...(xrp_id && { xrp_id }),
-          ...(image && { image }),
-          ...(owner_id && { owner_id })
-        },
+        where: { id: data.id },
+        data,
       });
     },
     deleteItem: async (_: any, { id }: { id: string }) => {
@@ -96,6 +77,6 @@ const itemResolvers = {
       });
     },
   },
-}; 
+};
 
 export default itemResolvers;
