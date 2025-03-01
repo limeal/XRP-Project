@@ -1,9 +1,12 @@
-//! Actix Web juniper example
+//! Actix Web + Juniper + Diesel Example
 //!
-//! A simple example integrating juniper in Actix Web
+//! Ce projet intègre GraphQL avec Juniper et une base de données PostgreSQL via Diesel.
 
 use std::{io, sync::Arc};
-
+use diesel::prelude::*;
+use diesel::pg::PgConnection;
+use dotenvy::dotenv;
+use std::env;
 use actix_cors::Cors;
 use actix_web::{
     get, middleware, route,
@@ -11,41 +14,53 @@ use actix_web::{
     App, HttpResponse, HttpServer, Responder,
 };
 use juniper::http::{graphiql::graphiql_source, GraphQLRequest};
+use crate::graphql::schema::{create_schema, Schema};
 
-mod schema;
+mod schema;  // Pour Diesel
+mod graphql; // Pour GraphQL
+mod db;
 
-use crate::schema::{create_schema, Schema};
+/// Fonction pour établir la connexion à PostgreSQL
+pub fn establish_connection() -> PgConnection {
+    dotenv().ok();
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL doit être définie");
+    PgConnection::establish(&database_url)
+        .expect("Erreur de connexion à la base de données")
+}
 
-/// GraphiQL playground UI
+/// Point d'entrée vers GraphiQL (interface pour tester les requêtes GraphQL)
 #[get("/graphiql")]
 async fn graphql_playground() -> impl Responder {
     web::Html::new(graphiql_source("/graphql", None))
 }
 
-/// GraphQL endpoint
-#[route("/graphql", method = "GET", method = "POST")]
-async fn graphql(st: web::Data<Schema>, data: web::Json<GraphQLRequest>) -> impl Responder {
-    let user = data.execute(&st, &()).await;
-    HttpResponse::Ok().json(user)
+/// Endpoint GraphQL
+#[route("/graphql_api", method = "GET", method = "POST")]
+async fn graphql_api(st: web::Data<Schema>, data: web::Json<GraphQLRequest>) -> impl Responder {
+    let response = data.execute(&st, &()).await;
+    HttpResponse::Ok().json(response)
 }
 
 #[actix_web::main]
 async fn main() -> io::Result<()> {
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
-    // Create Juniper schema
+    // Connexion à PostgreSQL
+    let conn = establish_connection();
+    println!("Connexion à PostgreSQL réussie !");
+
+    // Création du schéma GraphQL
     let schema = Arc::new(create_schema());
 
-    log::info!("starting HTTP server on port 8080");
-    log::info!("GraphiQL playground: http://localhost:8080/graphiql");
+    log::info!("Serveur en cours d'exécution sur http://localhost:8080");
+    log::info!("GraphiQL disponible sur http://localhost:8080/graphiql");
 
-    // Start HTTP server
+    // Démarrage du serveur HTTP
     HttpServer::new(move || {
         App::new()
             .app_data(Data::from(schema.clone()))
             .service(graphql)
             .service(graphql_playground)
-            // the graphiql UI requires CORS to be enabled
             .wrap(Cors::permissive())
             .wrap(middleware::Logger::default())
     })

@@ -1,62 +1,62 @@
-use juniper::{EmptySubscription, FieldResult, RootNode};
+// @generated automatically by Diesel CLI.
 
-#[derive(GraphQLEnum)]
-enum Episode {
-    NewHope,
-    Empire,
-    Jedi,
-}
-
-use juniper::{GraphQLEnum, GraphQLInputObject, GraphQLObject};
-
-#[derive(GraphQLObject)]
-#[graphql(description = "A humanoid creature in the Star Wars universe")]
-struct Human {
-    id: String,
-    name: String,
-    appears_in: Vec<Episode>,
-    home_planet: String,
-}
-
-#[derive(GraphQLInputObject)]
-#[graphql(description = "A humanoid creature in the Star Wars universe")]
-struct NewHuman {
-    name: String,
-    appears_in: Vec<Episode>,
-    home_planet: String,
-}
-
-pub struct QueryRoot;
-
-#[juniper::graphql_object]
-impl QueryRoot {
-    fn human(id: String) -> FieldResult<Human> {
-        println!("human: {}", id);
-        Ok(Human {
-            id: id.to_owned(),
-            name: "Luke".to_owned(),
-            appears_in: vec![Episode::NewHope],
-            home_planet: "Mars".to_owned(),
-        })
+diesel::table! {
+    comments (id) {
+        id -> Int8,
+        entity_type -> Varchar,
+        entity_id -> Int8,
+        body -> Varchar,
     }
 }
 
-pub struct MutationRoot;
-
-#[juniper::graphql_object]
-impl MutationRoot {
-    fn create_human(new_human: NewHuman) -> FieldResult<Human> {
-        Ok(Human {
-            id: "1234".to_owned(),
-            name: new_human.name,
-            appears_in: new_human.appears_in,
-            home_planet: new_human.home_planet,
-        })
+diesel::table! {
+    item_prices (id) {
+        id -> Int8,
+        item_id -> Int8,
+        price -> Numeric,
     }
 }
 
-pub type Schema = RootNode<'static, QueryRoot, MutationRoot, EmptySubscription>;
-
-pub fn create_schema() -> Schema {
-    Schema::new(QueryRoot {}, MutationRoot {}, EmptySubscription::new())
+diesel::table! {
+    items (id) {
+        id -> Int8,
+        name -> Varchar,
+        description -> Nullable<Varchar>,
+        xrp_id -> Varchar,
+        image -> Nullable<Varchar>,
+        owner_id -> Int8,
+    }
 }
+
+diesel::table! {
+    tags (id) {
+        id -> Int8,
+        entity_type -> Varchar,
+        entity_id -> Int8,
+        title -> Varchar,
+    }
+}
+
+diesel::table! {
+    users (id) {
+        id -> Int8,
+        username -> Varchar,
+        email -> Varchar,
+        password -> Varchar,
+        xrp_address -> Nullable<Varchar>,
+        last_login_at -> Nullable<Timestamp>,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
+    }
+}
+
+diesel::joinable!(item_prices -> items (item_id));
+diesel::joinable!(items -> users (owner_id));
+
+diesel::allow_tables_to_appear_in_same_query!(
+    comments,
+    item_prices,
+    items,
+    tags,
+    users,
+);
