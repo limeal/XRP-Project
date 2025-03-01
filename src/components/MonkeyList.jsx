@@ -1,17 +1,46 @@
-import monkeys from '@constants/monkeys'
+/* eslint-disable react/prop-types */
 import { ArrowBackIos, ArrowForwardIos } from '@mui/icons-material'
 import { Box, IconButton, Typography, useMediaQuery } from '@mui/material'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
-const MonkeyList = () => {
+const MonkeyList = ({ monkeys }) => {
   const isSmallScreen = useMediaQuery('(max-width: 600px)')
   const isMediumScreen = useMediaQuery('(max-width: 900px)')
+  const [page, setPage] = useState(0)
+
+  if (!monkeys || monkeys.length === 0) {
+    return (
+      <Typography
+        sx={{
+          textAlign: 'center',
+          fontSize: '1.2rem',
+          fontWeight: 'bold',
+          color: 'gray',
+        }}
+      >
+        No monkeys found
+      </Typography>
+    )
+  }
 
   const monkeysPerPage = isSmallScreen ? 2 : isMediumScreen ? 3 : 5
   const totalPages = Math.ceil(monkeys.length / monkeysPerPage)
-  const [page, setPage] = useState(0)
 
+  if (!monkeys || monkeys.length === 0) {
+    return (
+      <Typography
+        sx={{
+          textAlign: 'center',
+          fontSize: '1.2rem',
+          fontWeight: 'bold',
+          color: 'gray',
+        }}
+      >
+        No monkeys found
+      </Typography>
+    )
+  }
   const handleNext = () => {
     setPage((prev) => (prev + 1) % totalPages)
   }
@@ -106,7 +135,11 @@ const MonkeyList = () => {
                     sx={{
                       flexGrow: 1,
                       textAlign: 'left',
-                      fontSize: { xs: '0.5rem', sm: '0.57rem', md: '0.8rem' },
+                      fontSize: {
+                        xs: '0.5rem',
+                        sm: '0.57rem',
+                        md: '0.8rem',
+                      },
                     }}
                   >
                     {monkey.name}
@@ -116,7 +149,11 @@ const MonkeyList = () => {
                     sx={{
                       fontWeight: 'bold',
                       textAlign: 'right',
-                      fontSize: { xs: '0.5rem', sm: '0.57rem', md: '0.7rem' },
+                      fontSize: {
+                        xs: '0.5rem',
+                        sm: '0.57rem',
+                        md: '0.7rem',
+                      },
                     }}
                   >
                     {monkey.price}

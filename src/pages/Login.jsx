@@ -1,8 +1,9 @@
 import { Button, Container, TextField, Typography } from '@mui/material'
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 const Login = () => {
+  const navigate = useNavigate()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
 
@@ -22,6 +23,21 @@ const Login = () => {
         textAlign: 'center',
       }}
     >
+      <Button
+        variant="contained"
+        color="secondary"
+        onClick={() => navigate('/')}
+        sx={{
+          position: 'absolute',
+          top: 30,
+          left: 30,
+          fontSize: { xs: '0.8rem', md: '1rem' },
+          padding: { xs: '6px 12px', md: '8px 16px' },
+          zIndex: 10,
+        }}
+      >
+        Home
+      </Button>
       <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 3 }}>
         Login
       </Typography>

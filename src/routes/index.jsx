@@ -1,6 +1,7 @@
 import HomePage from '@pages/HomePage'
 import Login from '@pages/Login'
 import MonkeyPage from '@pages/MonkeyPage'
+import ProfilePage from '@pages/ProfilePage'
 import Register from '@pages/Register'
 import { Route, Routes } from 'react-router-dom'
 
@@ -11,6 +12,7 @@ const AppRoutes = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/monkey/:id" element={<MonkeyPage />} />
+      <Route path="/profile" element={<ProfilePage />} />
     </Routes>
   )
 }

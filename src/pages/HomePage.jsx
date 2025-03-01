@@ -1,4 +1,5 @@
 import MonkeyList from '@components/MonkeyList'
+import monkeys from '@constants/monkeys'
 import { Box, Button, Container, TextField, Typography } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 
@@ -104,7 +105,7 @@ const HomePage = () => {
           Trendy Monkeys
         </Typography>
 
-        <MonkeyList />
+        <MonkeyList monkeys={monkeys} />
       </Box>
     </Box>
   )
