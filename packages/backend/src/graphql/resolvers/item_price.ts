@@ -26,6 +26,7 @@ const itemPriceResolvers = {
       item_id: string;
       price: bigint;
     }) => {
+      // TODO: Call createOfferForToken
       return await prisma.itemPrice.create({
         data: {
           item_id,
@@ -48,6 +49,7 @@ const itemPriceResolvers = {
       });
     },
     deleteItemPrice: async (_: any, { id }: { id: string }) => {
+      // TODO: Call cancelOfferForToken
       return await prisma.itemPrice.delete({
         where: { id },
       });

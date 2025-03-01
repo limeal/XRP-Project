@@ -53,6 +53,7 @@ const itemResolvers = {
       image: string;
       owner_id: string;
     }) => {
+      // TODO: Call createNFTToken
       return await prisma.item.create({
         data: {
           name,

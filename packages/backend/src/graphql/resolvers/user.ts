@@ -23,6 +23,10 @@ const userResolvers = {
       password: string;
       xrp_address?: string;
     }) => {
+      // TODO: Encrypt password before saving
+
+      // TODO: Call createTestnetAccount
+
       return await prisma.user.create({
         data: {
           username,
