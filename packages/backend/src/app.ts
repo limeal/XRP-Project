@@ -9,6 +9,9 @@ import http from 'http';
 import { typeDefs, resolvers } from './graphql';
 import logger from './utils/logger';
 import { User } from '@prisma/client';
+import passport from 'passport';
+import './config/passport';
+import { RequestHandler } from 'express';
 
 export type Context = {
   req: express.Request;
@@ -29,17 +32,24 @@ async function createApolloServer(app: express.Application) {
   });
   await server.start();
   
-  // Apply middleware after server has started
-  // Using type assertion to bypass type incompatibility issues
+  app.use(passport.initialize() as RequestHandler);
+  
   app.use(
     '/graphql', 
     cors(),
-    express.json(), 
+    express.json(),
     expressMiddleware(server, {
       context: async ({ req }) => {
-        // TODO: Add authentication logic here
-        // You can add authentication logic here
-        return { req, user: undefined };
+        // Vérifier le token JWT
+        return new Promise((resolve) => {
+          passport.authenticate('jwt', { session: false }, (err: Error | null, user: User | false) => {
+            if (err || !user) {
+              resolve({ req, user: undefined });
+            } else {
+              resolve({ req, user: user as User });
+            }
+          })(req);
+        });
       },
     }) as any
   );

@@ -47,6 +47,11 @@ const typeDefs = `#graphql
     title: String
   }
 
+  type AuthPayload {
+    token: String!
+    user: User!
+  }
+
   type Query {
     users: [User!]!
     user(id: String!): User
@@ -61,19 +66,23 @@ const typeDefs = `#graphql
   }
 
   type Mutation {
-    createUser(
-      username: String
-      email: String
-      password: String
-      xrp_address: String
-    ): User!
+    signup(
+      username: String!
+      email: String!
+      password: String!
+    ): AuthPayload!
     
+    login(
+      email: String!
+      password: String!
+    ): AuthPayload!
+
     updateUser(
       id: String!
       username: String
       email: String
       password: String
-      xrp_address: String
+      xrp_seed: String
     ): User!
     
     deleteUser(id: String!): User!
