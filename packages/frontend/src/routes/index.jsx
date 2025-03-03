@@ -4,6 +4,7 @@ import MonkeyPage from '@pages/MonkeyPage'
 import ProfilePage from '@pages/ProfilePage'
 import Register from '@pages/Register'
 import { Route, Routes } from 'react-router-dom'
+import ProtectedRoute from './ProtectedRoute'
 
 const AppRoutes = () => {
   return (
@@ -12,7 +13,11 @@ const AppRoutes = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/monkey/:id" element={<MonkeyPage />} />
-      <Route path="/profile" element={<ProfilePage />} />
+
+      {/* Protected routes */}
+      <Route element={<ProtectedRoute />}>
+        <Route path="/profile" element={<ProfilePage />} />
+      </Route>
     </Routes>
   )
 }

@@ -1,22 +1,33 @@
+import { useMutation } from '@apollo/client'
+import { SIGNUP_MUTATION } from '@graphql/auth'
 import { Button, Container, TextField, Typography } from '@mui/material'
-import { useState } from 'react'
+import { useContext, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { AuthContext } from '../context/AuthContext'
 
 const RegisterPage = () => {
   const navigate = useNavigate()
+  const { login: authLogin } = useContext(AuthContext)
+
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+
+  const [signupMutation, { loading, error }] = useMutation(SIGNUP_MUTATION, {
+    onCompleted: (data) => {
+      const { token, user } = data.signup
+      authLogin(token, user)
+      navigate('/profile')
+    },
+  })
 
   const handleRegister = () => {
     if (password !== confirmPassword) {
       alert('Passwords do not match!')
       return
     }
-
-    console.log('Registering with:', { username, email, password })
-    // TODO: Implement registration logic
+    signupMutation({ variables: { username, email, password } })
   }
 
   return (
@@ -48,6 +59,7 @@ const RegisterPage = () => {
       <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 3 }}>
         Register
       </Typography>
+      {error && <Typography color="error">{error.message}</Typography>}
 
       <TextField
         label="Username"
@@ -90,11 +102,12 @@ const RegisterPage = () => {
 
       <Button
         variant="contained"
+        disabled={loading}
         color="secondary"
         onClick={handleRegister}
         sx={{ width: '100%', maxWidth: '400px', mb: 2 }}
       >
-        Register
+        {loading ? 'Registering...' : 'Register'}
       </Button>
 
       <Typography variant="body2">

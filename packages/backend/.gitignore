@@ -1,2 +1,22 @@
-/target
+# Dependencies
+node_modules/
+
+# Build
+dist/
+
+# Logs
+logs/
+*.log
+
+# Environment variables
 .env
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Ignore Windows Zone Identifier files
+*.Zone.Identifier

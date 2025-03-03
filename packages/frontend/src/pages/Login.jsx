@@ -1,15 +1,26 @@
+import { useMutation } from '@apollo/client'
+import { LOGIN_MUTATION } from '@graphql/auth'
 import { Button, Container, TextField, Typography } from '@mui/material'
-import { useState } from 'react'
+import { useContext, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { AuthContext } from '../context/AuthContext'
 
 const Login = () => {
   const navigate = useNavigate()
-  const [username, setUsername] = useState('')
+  const { login: authLogin } = useContext(AuthContext)
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
+  const [loginMutation, { loading, error }] = useMutation(LOGIN_MUTATION, {
+    onCompleted: (data) => {
+      const { token, user } = data.login
+      authLogin(token, user)
+      navigate('/profile')
+    },
+  })
+
   const handleLogin = () => {
-    console.log('Logging in with:', { username, password })
-    // TODO: Implement authentication logic
+    loginMutation({ variables: { email, password } })
   }
 
   return (
@@ -41,13 +52,13 @@ const Login = () => {
       <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 3 }}>
         Login
       </Typography>
-
+      {error && <Typography color="error">{error.message}</Typography>}
       <TextField
         label="Username"
         variant="outlined"
         fullWidth
-        value={username}
-        onChange={(e) => setUsername(e.target.value)}
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
         sx={{ mb: 2, maxWidth: '400px' }}
       />
 
@@ -64,10 +75,11 @@ const Login = () => {
       <Button
         variant="contained"
         color="secondary"
+        disabled={loading}
         onClick={handleLogin}
         sx={{ width: '100%', maxWidth: '400px', mb: 2 }}
       >
-        Login
+        {loading ? 'Logging in...' : 'Login'}
       </Button>
 
       <Typography variant="body2">
