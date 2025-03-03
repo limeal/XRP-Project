@@ -2,15 +2,10 @@ const typeDefs = `#graphql
   scalar BigInt
   scalar DateTime
 
+  # Un seul type User pour tous, avec les champs publics uniquement
   type User {
     id: String!
-    username: String
-    email: String
-    password: String
-    xrp_address: String
-    last_login_at: DateTime
-    created_at: DateTime!
-    updated_at: DateTime!
+    username: String!
   }
 
   type Item {
@@ -18,7 +13,7 @@ const typeDefs = `#graphql
     name: String!
     description: String!
     xrp_id: String
-    image: String!
+    image_url: String!
     owner_id: String!
     owner: User!
     comments: [Comment!]!
@@ -87,8 +82,19 @@ const typeDefs = `#graphql
     
     deleteUser(id: String!): User!
 
-    createItem(name: String!, description: String!, xrp_id: String, image: String!, owner_id: String!): Item!
-    updateItem(id: String!, name: String, description: String, xrp_id: String, image: String, owner_id: String): Item!
+    createItem(
+      name: String!, 
+      description: String!, 
+      image: String! # Base64 encoded image
+    ): Item!
+
+    updateItem(
+      id: String!, 
+      name: String, 
+      description: String, 
+      image: String
+    ): Item!
+
     deleteItem(id: String!): Item!
 
     createItemPrice(item_id: String!, price: BigInt): ItemPrice!

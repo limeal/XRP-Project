@@ -15,14 +15,21 @@ type CreateUserInput = {
 
 const userResolvers = {
   Query: {
-    users: async (_: any, __: any, { user }: { user?: User }) => {
-      if (!user) throw new Error('Not authenticated');
-      return await prisma.user.findMany();
+    users: async () => {
+      return await prisma.user.findMany({
+        select: {
+          id: true,
+          username: true,
+        },
+      });
     },
-    user: async (_: any, { id }: { id: string }, { user }: { user?: User }) => {
-      if (!user) throw new Error('Not authenticated');
+    user: async (_: any, { id }: { id: string }) => {
       return await prisma.user.findUnique({
         where: { id },
+        select: {
+          id: true,
+          username: true,
+        },
       });
     },
   },
@@ -38,6 +45,10 @@ const userResolvers = {
           password: hashedPassword,
           xrp_seed,
         },
+        select: {
+          id: true,
+          username: true,
+        },
       });
 
       const token = jwt.sign(
@@ -49,7 +60,15 @@ const userResolvers = {
       return { token, user };
     },
     login: async (_: any, { email, password }: { email: string; password: string }) => {
-      const user = await prisma.user.findUnique({ where: { email } });
+      const user = await prisma.user.findUnique({ 
+        where: { email },
+        select: {
+          id: true,
+          username: true,
+          password: true,
+        },
+      });
+      
       if (!user) throw new Error('User not found');
 
       const isValid = await bcrypt.compare(password, user.password);
@@ -61,7 +80,9 @@ const userResolvers = {
         { expiresIn: config.jwt.expiresIn } as SignOptions
       );
 
-      return { token, user };
+      // Utiliser un nom différent pour éviter le conflit
+      const { password: pwd, ...publicUser } = user;
+      return { token, user: publicUser };
     },
     updateUser: async (_: any, data: Partial<User> & { id: string }, { user }: { user?: User }) => {
       if (!user) throw new Error('Not authenticated');
@@ -71,12 +92,20 @@ const userResolvers = {
       return await prisma.user.update({
         where: { id: data.id },
         data,
+        select: {
+          id: true,
+          username: true,
+        },
       });
     },
     deleteUser: async (_: any, { id }: { id: string }, { user }: { user?: User }) => {
       if (!user) throw new Error('Not authenticated');
       return await prisma.user.delete({
         where: { id },
+        select: {
+          id: true,
+          username: true,
+        },
       });
     },
   },

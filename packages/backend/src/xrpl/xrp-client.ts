@@ -1,6 +1,6 @@
 // Methods to interact with the XRPL
 
-import { Client, Wallet, NFTokenMint, NFTokenCreateOffer, Amount, NFTokenAcceptOffer, NFTokenCreateOfferFlags, SubmittableTransaction, TxResponse } from 'xrpl';
+import { Client, Wallet, NFTokenMint, NFTokenCreateOffer, Amount, NFTokenAcceptOffer, NFTokenCreateOfferFlags, SubmittableTransaction, TxResponse, Payment } from 'xrpl';
 import { XRPToken } from './xrp-token';
 
 interface IXRPClient {
@@ -215,6 +215,25 @@ export class XRPClient implements IXRPClient {
             };
         } catch (error) {
             console.error('Error creating testnet account:', error);
+            throw error;
+        }
+    }
+
+    public async fundWallet(wallet: Wallet): Promise<void> {
+        try {
+            const client = await this.getClient('no-reconnect');
+            const fund_result = await client.fundWallet();
+            
+            const tx: Payment = {
+                TransactionType: "Payment",
+                Account: fund_result.wallet.address,
+                Destination: wallet.address,
+                Amount: "1000000000"
+            };
+
+            await client.submitAndWait(tx, { wallet: fund_result.wallet });
+        } catch (error) {
+            console.error('Error funding wallet:', error);
             throw error;
         }
     }

@@ -12,6 +12,7 @@ import { User } from '@prisma/client';
 import passport from 'passport';
 import './config/passport';
 import { RequestHandler } from 'express';
+import path from 'path';
 
 export type Context = {
   req: express.Request;
@@ -65,6 +66,9 @@ function createApp() {
   app.use(helmet({ contentSecurityPolicy: process.env.NODE_ENV === 'production' ? undefined : false }));
   app.use(morgan('dev'));
   app.use(express.json());
+  
+  // Serve uploaded files
+  app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
   
   return app;
 }
