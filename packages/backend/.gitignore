@@ -19,4 +19,4 @@ logs/
 .DS_Store
 
 # Ignore Windows Zone Identifier files
-*.Zone.Identifier
+*Zone.Identifier
