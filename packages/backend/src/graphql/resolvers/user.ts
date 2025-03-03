@@ -1,10 +1,9 @@
 import { User } from '@prisma/client';
 import prisma from '../../prisma/client';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import config from '../../config';
-import { Secret, SignOptions } from 'jsonwebtoken';
-import { generateSeed } from '../../xrpl/client';
+import { XRPClient } from '../../xrpl/xrp-client';
 
 type CreateUserInput = {
   username: string;
@@ -29,14 +28,15 @@ const userResolvers = {
   Mutation: {
     signup: async (_: any, { username, email, password }: Omit<CreateUserInput, 'xrp_seed'>) => {
       const hashedPassword = await bcrypt.hash(password, 10);
-      const xrp_seed = generateSeed();
+      const xrp = new XRPClient();
+      const account = await xrp.createTestnetAccount();
 
       const user = await prisma.user.create({
         data: {
           username,
           email,
           password: hashedPassword,
-          xrp_seed,
+          xrp_seed: account.seed,
         },
       });
 
