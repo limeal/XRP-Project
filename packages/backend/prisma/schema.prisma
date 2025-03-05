@@ -19,17 +19,18 @@ enum EntityType {
 }
 
 model User {
-  id            String    @id @default(uuid())
+  id String @id @default(uuid())
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
   username      String
   email         String    @unique
   password      String
   xrp_seed      String?
-  created_at    DateTime  @default(now())
-  updated_at    DateTime  @updatedAt
   last_login_at DateTime?
-  items         Item[]
   
   // Relations
+  items         Item[]
   comments      Comment[] @relation("UserComment")
   tags          Tag[] @relation("UserTag")
 
@@ -37,13 +38,14 @@ model User {
 }
 
 model Item {
-  id          String    @id @default(uuid())
+  id String @id @default(uuid())
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
   name        String
   description String
   xrp_id      String?
   image_url   String
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
 
   // Relations
   owner_id    String
