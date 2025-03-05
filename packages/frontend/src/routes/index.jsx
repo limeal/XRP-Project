@@ -5,18 +5,21 @@ import ProfilePage from '@pages/ProfilePage'
 import Register from '@pages/Register'
 import { Route, Routes } from 'react-router-dom'
 import ProtectedRoute from './ProtectedRoute'
+import PublicRoute from './PublicRoute'
 
 const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
       <Route path="/monkey/:id" element={<MonkeyPage />} />
 
-      {/* Protected routes */}
+      <Route element={<PublicRoute />}>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+      </Route>
+
       <Route element={<ProtectedRoute />}>
-        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/profile/:id" element={<ProfilePage />} />
       </Route>
     </Routes>
   )

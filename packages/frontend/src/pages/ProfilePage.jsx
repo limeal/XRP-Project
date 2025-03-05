@@ -1,14 +1,38 @@
+import { useQuery } from '@apollo/client'
 import MonkeyList from '@components/MonkeyList'
 import monkeys from '@constants/monkeys'
 import userTags from '@constants/tags'
-import { Avatar, Box, Button, Chip, Container, Typography } from '@mui/material'
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { GET_USER_QUERY } from '@graphql/user'
+import {
+  Avatar,
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Container,
+  Typography,
+} from '@mui/material'
+import { useContext } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { AuthContext } from '../context/AuthContext'
 
 const ProfilePage = () => {
+  const { id } = useParams()
   const navigate = useNavigate()
-  const [isOnline, setIsOnline] = useState(true)
-  const username = 'Blemet'
+  const {
+    user: loggedInUser,
+    isAuthenticated: isOnline,
+    logout,
+  } = useContext(AuthContext)
+  const isOwner = loggedInUser?.id === id
+
+  const { loading, error, data } = useQuery(GET_USER_QUERY, {
+    variables: { id },
+  })
+
+  if (loading) return <CircularProgress />
+  if (error) return <Typography color="error">{error.message}</Typography>
+  if (!data?.user) return <Typography>User not found</Typography>
 
   return (
     <Container
@@ -52,12 +76,12 @@ const ProfilePage = () => {
             bgcolor: 'secondary.main',
           }}
         >
-          {username.charAt(0).toUpperCase()}
+          {data.user.username.charAt(0).toUpperCase()}
         </Avatar>
 
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-            {username}
+            {data.user.username}
           </Typography>
           <Box
             sx={{
@@ -107,14 +131,20 @@ const ProfilePage = () => {
       >
         Owned Monkeys
       </Typography>
-      <MonkeyList monkeys={monkeys.slice(0, 3)} />{' '}
-      <Button
-        variant="contained"
-        color="secondary"
-        sx={{ mt: 4, fontSize: '1rem', px: 4 }}
-      >
-        Logout
-      </Button>
+      <MonkeyList monkeys={monkeys.slice(0, 3)} />
+      {isOwner && (
+        <Button
+          variant="contained"
+          color="secondary"
+          sx={{ mt: 4, fontSize: '1rem', px: 4 }}
+          onClick={() => {
+            logout()
+            navigate('/login')
+          }}
+        >
+          Logout
+        </Button>
+      )}
     </Container>
   )
 }

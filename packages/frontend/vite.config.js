@@ -29,6 +29,7 @@ export default defineConfig({
       '@assets': path.resolve(__dirname, './src/assets'),
       '@atoms': path.resolve(__dirname, './src/atoms'),
       '@graphql': path.resolve(__dirname, './src/graphql'),
+      '@context': path.resolve(__dirname, './src/context'),
     },
   },
 })

@@ -1,10 +1,13 @@
 import MonkeyList from '@components/MonkeyList'
 import monkeys from '@constants/monkeys'
 import { Box, Button, Container, TextField, Typography } from '@mui/material'
-import { useNavigate } from 'react-router-dom'
+import { useContext } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { AuthContext } from '../context/AuthContext'
 
 const HomePage = () => {
   const navigate = useNavigate()
+  const { user } = useContext(AuthContext)
 
   return (
     <Box
@@ -19,20 +22,41 @@ const HomePage = () => {
         position: 'relative',
       }}
     >
-      <Button
-        variant="contained"
-        color="secondary"
-        sx={{
-          position: 'absolute',
-          top: 20,
-          right: 20,
-          fontSize: { xs: '0.8rem', md: '1rem' },
-          padding: { xs: '6px 12px', md: '8px 16px' },
-        }}
-        onClick={() => navigate('/login')}
-      >
-        Login
-      </Button>
+      {user ? (
+        <Button
+          component={Link}
+          to={`/profile/${user.id}`}
+          variant="contained"
+          color="success"
+          sx={{
+            position: 'absolute',
+            top: 20,
+            right: 20,
+            fontSize: { xs: '0.9rem', md: '1rem' },
+            fontWeight: 'bold',
+            padding: { xs: '6px 14px', md: '10px 18px' },
+            borderRadius: '20px',
+          }}
+        >
+          {user.username}
+        </Button>
+      ) : (
+        <Button
+          variant="contained"
+          color="secondary"
+          sx={{
+            position: 'absolute',
+            top: 20,
+            right: 20,
+            fontSize: { xs: '0.8rem', md: '1rem' },
+            padding: { xs: '6px 12px', md: '8px 16px' },
+          }}
+          onClick={() => navigate('/login')}
+        >
+          Login
+        </Button>
+      )}
+
       {/* TOP SECTION (70% of the screen) */}
       <Container
         sx={{

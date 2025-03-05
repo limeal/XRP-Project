@@ -15,7 +15,7 @@ const Login = () => {
     onCompleted: (data) => {
       const { token, user } = data.login
       authLogin(token, user)
-      navigate('/profile')
+      navigate(`/profile/${user.id}`)
     },
   })
 
@@ -54,7 +54,7 @@ const Login = () => {
       </Typography>
       {error && <Typography color="error">{error.message}</Typography>}
       <TextField
-        label="Username"
+        label="Email"
         variant="outlined"
         fullWidth
         value={email}

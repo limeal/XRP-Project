@@ -6,6 +6,7 @@ const monkeys = [
     img: '/images/monkey_astronaut.jpg',
     description:
       'A fearless space explorer searching for cosmic bananas in the vast universe.',
+    owner: { name: 'Admin', id: 'c85dd6ef-ce31-443a-93ad-408ec4855353' },
   },
   {
     id: 2,
@@ -14,6 +15,7 @@ const monkeys = [
     img: '/images/monkey_basketball.jpg',
     description:
       'A basketball legend who can dunk from the free-throw line with insane agility.',
+    owner: { name: 'Admin', id: 'c85dd6ef-ce31-443a-93ad-408ec4855353' },
   },
   {
     id: 3,
@@ -22,6 +24,7 @@ const monkeys = [
     img: '/images/monkey_classy.jpg',
     description:
       'A sophisticated ape who enjoys fine dining, classical music, and expensive cigars.',
+    owner: { name: 'Admin', id: 'c85dd6ef-ce31-443a-93ad-408ec4855353' },
   },
   {
     id: 4,
@@ -30,6 +33,7 @@ const monkeys = [
     img: '/images/monkey_fighter.jpg',
     description:
       'A battle-hardened cybernetic ape from a dystopian future, trained in high-tech combat.',
+    owner: { name: 'Admin', id: 'c85dd6ef-ce31-443a-93ad-408ec4855353' },
   },
   {
     id: 5,
@@ -38,6 +42,7 @@ const monkeys = [
     img: '/images/monkey_funk.jpg',
     description:
       'A groovy disco-loving ape who dances to funky beats all night long.',
+    owner: { name: 'Admin', id: 'c85dd6ef-ce31-443a-93ad-408ec4855353' },
   },
   {
     id: 6,
@@ -46,6 +51,7 @@ const monkeys = [
     img: '/images/monkey_hippie.jpg',
     description:
       'A peace-loving, flower-wearing monkey who preaches love and harmony.',
+    owner: { name: 'Admin', id: 'c85dd6ef-ce31-443a-93ad-408ec4855353' },
   },
   {
     id: 7,
@@ -54,6 +60,7 @@ const monkeys = [
     img: '/images/monkey_street.jpg',
     description:
       'A street-smart monkey who thrives in the urban jungle, always up to some mischief.',
+    owner: { name: 'Admin', id: 'c85dd6ef-ce31-443a-93ad-408ec4855353' },
   },
   {
     id: 8,
@@ -62,6 +69,7 @@ const monkeys = [
     img: '/images/monkey_swag.jpg',
     description:
       'A wise old ape who has mastered the ancient secrets of the jungle.',
+    owner: { name: 'Admin', id: 'c85dd6ef-ce31-443a-93ad-408ec4855353' },
   },
   {
     id: 9,
@@ -70,6 +78,7 @@ const monkeys = [
     img: '/images/monkey_wall_street.jpg',
     description:
       'A finance genius who trades stocks and crypto faster than any human.',
+    owner: { name: 'Admin', id: 'c85dd6ef-ce31-443a-93ad-408ec4855353' },
   },
   {
     id: 10,
@@ -78,6 +87,7 @@ const monkeys = [
     img: '/images/monkey_dracula.jpg',
     description:
       'A mysterious vampire monkey who lurks in the shadows, seeking eternal bananas.',
+    owner: { name: 'Admin', id: 'c85dd6ef-ce31-443a-93ad-408ec4855353' },
   },
 ]
 

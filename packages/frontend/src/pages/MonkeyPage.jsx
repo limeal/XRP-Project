@@ -1,11 +1,19 @@
 import monkeys from '@constants/monkeys'
-import { Box, Button, Container, Typography } from '@mui/material'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Avatar, Box, Button, Container, Typography } from '@mui/material'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 
 const MonkeyPage = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const monkey = monkeys.find((m) => m.id === parseInt(id))
+
+  // const { loading, error, data } = useQuery(GET_MONKEY_QUERY, {
+  //   variables: { id },
+  // })
+
+  // if (loading) return <CircularProgress />
+  // if (error) return <Typography color="error">{error.message}</Typography>
+  // if (!data?.item) return <Typography>Monkey not found</Typography>
 
   if (!monkey) {
     return (
@@ -83,11 +91,35 @@ const MonkeyPage = () => {
           sx={{
             maxWidth: '600px',
             fontSize: { xs: '0.9rem', sm: '1rem', md: '1.2rem' },
-            mb: 3,
+            mb: 2,
           }}
         >
           {monkey.description}
         </Typography>
+
+        {/* Owner Information */}
+        {monkey.owner && (
+          <Box sx={{ m: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Avatar sx={{ bgcolor: 'secondary.main' }}>
+              {monkey.owner.name.charAt(0).toUpperCase()}
+            </Avatar>
+            <Typography variant="h6">
+              Owned by{' '}
+              <Button
+                component={Link}
+                to={`/profile/${monkey.owner.id}`}
+                sx={{
+                  color: '#1E3A8A',
+                  fontWeight: 'bold',
+                  fontSize: '1.1rem',
+                  '&:hover': { textDecoration: 'underline' },
+                }}
+              >
+                {monkey.owner.name}
+              </Button>
+            </Typography>
+          </Box>
+        )}
 
         <Button
           variant="contained"

@@ -11,6 +11,7 @@ const typeDefs = `#graphql
     last_login_at: DateTime
     created_at: DateTime!
     updated_at: DateTime!
+    items: [Item!]!
   }
 
   type Item {
@@ -18,7 +19,7 @@ const typeDefs = `#graphql
     name: String!
     description: String!
     xrp_id: String
-    image: String!
+    image_url: String!
     owner_id: String!
     owner: User!
     comments: [Comment!]!

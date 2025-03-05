@@ -1,9 +1,8 @@
 import { User } from '@prisma/client';
-import prisma from '../../prisma/client';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import config from '../../config';
-import { Secret, SignOptions } from 'jsonwebtoken';
+import prisma from '../../prisma/client';
 import { generateSeed } from '../../xrpl/client';
 
 type CreateUserInput = {
@@ -11,7 +10,7 @@ type CreateUserInput = {
   email: string;
   password: string;
   xrp_seed?: string | null;
-}
+};
 
 const userResolvers = {
   Query: {
@@ -23,11 +22,17 @@ const userResolvers = {
       if (!user) throw new Error('Not authenticated');
       return await prisma.user.findUnique({
         where: { id },
+        include: {
+          items: true,
+        },
       });
     },
   },
   Mutation: {
-    signup: async (_: any, { username, email, password }: Omit<CreateUserInput, 'xrp_seed'>) => {
+    signup: async (
+      _: any,
+      { username, email, password }: Omit<CreateUserInput, 'xrp_seed'>
+    ) => {
       const hashedPassword = await bcrypt.hash(password, 10);
       const xrp_seed = generateSeed();
 
@@ -40,30 +45,33 @@ const userResolvers = {
         },
       });
 
-      const token = jwt.sign(
-        { id: user.id },
-        Buffer.from(config.jwt.secret),
-        { expiresIn: config.jwt.expiresIn } as SignOptions
-      );
+      const token = jwt.sign({ id: user.id }, Buffer.from(config.jwt.secret), {
+        expiresIn: config.jwt.expiresIn,
+      } as SignOptions);
 
       return { token, user };
     },
-    login: async (_: any, { email, password }: { email: string; password: string }) => {
+    login: async (
+      _: any,
+      { email, password }: { email: string; password: string }
+    ) => {
       const user = await prisma.user.findUnique({ where: { email } });
       if (!user) throw new Error('User not found');
 
       const isValid = await bcrypt.compare(password, user.password);
       if (!isValid) throw new Error('Invalid password');
 
-      const token = jwt.sign(
-        { id: user.id },
-        Buffer.from(config.jwt.secret),
-        { expiresIn: config.jwt.expiresIn } as SignOptions
-      );
+      const token = jwt.sign({ id: user.id }, Buffer.from(config.jwt.secret), {
+        expiresIn: config.jwt.expiresIn,
+      } as SignOptions);
 
       return { token, user };
     },
-    updateUser: async (_: any, data: Partial<User> & { id: string }, { user }: { user?: User }) => {
+    updateUser: async (
+      _: any,
+      data: Partial<User> & { id: string },
+      { user }: { user?: User }
+    ) => {
       if (!user) throw new Error('Not authenticated');
       if (data.password) {
         data.password = await bcrypt.hash(data.password, 10);
@@ -73,7 +81,11 @@ const userResolvers = {
         data,
       });
     },
-    deleteUser: async (_: any, { id }: { id: string }, { user }: { user?: User }) => {
+    deleteUser: async (
+      _: any,
+      { id }: { id: string },
+      { user }: { user?: User }
+    ) => {
       if (!user) throw new Error('Not authenticated');
       return await prisma.user.delete({
         where: { id },
@@ -82,4 +94,4 @@ const userResolvers = {
   },
 };
 
-export default userResolvers; 
+export default userResolvers;
