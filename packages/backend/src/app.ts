@@ -37,8 +37,6 @@ async function createApolloServer(app: express.Application) {
   
   app.use(
     '/graphql', 
-    cors(),
-    express.json(),
     expressMiddleware(server, {
       context: async ({ req }) => {
         // Vérifier le token JWT
@@ -61,15 +59,31 @@ async function createApolloServer(app: express.Application) {
 function createApp() {
   const app = express();
 
-  // Middleware
-  app.use(cors());
-  app.use(helmet({ contentSecurityPolicy: process.env.NODE_ENV === 'production' ? undefined : false }));
+  // Global Middleware - configure une seule fois au début
+  app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    exposedHeaders: ['Content-Disposition'], // Pour les téléchargements
+  }));
+
+  app.use(helmet({
+    contentSecurityPolicy: false, // Désactiver pour le développement
+    crossOriginResourcePolicy: { policy: "cross-origin" }
+  }));
+
   app.use(morgan('dev'));
   app.use(express.json());
-  
-  // Serve uploaded files
-  app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
-  
+
+  // Serve uploaded files - doit être après CORS et Helmet
+  const uploadsPath = path.join(__dirname, '../uploads');
+  console.log('Serving uploads from:', uploadsPath);
+
+  app.use('/uploads', (req, res, next) => {
+    console.log('Accessing file:', req.url);
+    next();
+  }, express.static(uploadsPath));
+
   return app;
 }
 

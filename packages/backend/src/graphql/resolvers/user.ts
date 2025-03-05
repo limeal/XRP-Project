@@ -109,6 +109,19 @@ const userResolvers = {
       });
     },
   },
+  User: {
+    items: async (parent: any) => {
+      return await prisma.item.findMany({
+        where: { owner_id: parent.id },
+        include: {
+          prices: {
+            orderBy: { created_at: 'desc' },
+            take: 1,
+          },
+        },
+      });
+    },
+  },
 };
 
 export default userResolvers; 

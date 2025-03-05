@@ -6,6 +6,7 @@ const typeDefs = `#graphql
   type User {
     id: String!
     username: String!
+    items: [Item!]!
   }
 
   type Item {
@@ -19,6 +20,7 @@ const typeDefs = `#graphql
     comments: [Comment!]!
     tags: [Tag!]!
     prices: [ItemPrice!]!
+    isForSale: Boolean!
   }
 
   type ItemPrice {
@@ -58,6 +60,8 @@ const typeDefs = `#graphql
     comment(id: String!): Comment
     tags: [Tag!]!
     tag(id: String!): Tag
+    userItems(userId: String!): [Item!]!
+    itemsForSale: [Item!]!
   }
 
   type Mutation {
@@ -108,6 +112,9 @@ const typeDefs = `#graphql
     createTag(entity_type: String, entity_id: String!, title: String): Tag!
     updateTag(id: String!, title: String): Tag!
     deleteTag(id: String!): Tag!
+
+    putItemForSale(itemId: String!, price: BigInt!): ItemPrice!
+    buyItem(itemId: String!): Item!
   }
 `;
 
