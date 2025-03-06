@@ -1,6 +1,5 @@
 import { useQuery } from '@apollo/client'
 import MonkeyList from '@components/MonkeyList'
-import monkeys from '@constants/monkeys'
 import userTags from '@constants/tags'
 import { GET_USER_QUERY } from '@graphql/user'
 import {
@@ -131,7 +130,7 @@ const ProfilePage = () => {
       >
         Owned Monkeys
       </Typography>
-      <MonkeyList monkeys={monkeys.slice(0, 3)} />
+      <MonkeyList monkeys={data.user.items} isProfilePage={true} />
       {isOwner && (
         <Button
           variant="contained"

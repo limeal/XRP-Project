@@ -4,7 +4,7 @@ import { Box, IconButton, Typography, useMediaQuery } from '@mui/material'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
-const MonkeyList = ({ monkeys }) => {
+const MonkeyList = ({ monkeys, isProfilePage = false }) => {
   const isSmallScreen = useMediaQuery('(max-width: 600px)')
   const isMediumScreen = useMediaQuery('(max-width: 900px)')
   const [page, setPage] = useState(0)
@@ -49,10 +49,11 @@ const MonkeyList = ({ monkeys }) => {
       <IconButton
         onClick={handlePrev}
         sx={{
-          color: 'white',
+          color: isProfilePage ? 'black' : 'white',
           position: 'absolute',
-          left: 10,
+          left: '0%',
           zIndex: 2,
+          transform: 'scale(1.2)',
         }}
       >
         <ArrowBackIos />
@@ -162,10 +163,11 @@ const MonkeyList = ({ monkeys }) => {
       <IconButton
         onClick={handleNext}
         sx={{
-          color: 'white',
+          color: isProfilePage ? 'black' : 'white',
           position: 'absolute',
-          right: 10,
+          right: '0%',
           zIndex: 2,
+          transform: 'scale(1.2)',
         }}
       >
         <ArrowForwardIos />
