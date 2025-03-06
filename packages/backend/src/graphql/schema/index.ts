@@ -1,6 +1,7 @@
 const typeDefs = `#graphql
   scalar BigInt
   scalar DateTime
+  scalar Upload
 
   # Un seul type User pour tous, avec les champs publics uniquement
   type User {
@@ -89,7 +90,7 @@ const typeDefs = `#graphql
     createItem(
       name: String!, 
       description: String!, 
-      image: String! # Base64 encoded image
+      image: Upload!
     ): Item!
 
     updateItem(

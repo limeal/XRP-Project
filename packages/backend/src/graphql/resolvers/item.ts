@@ -83,7 +83,7 @@ const itemResolvers = {
       data: {
         name: string;
         description: string;
-        image: string;
+        image: any;
       },
       context: Context
     ) => {
@@ -110,6 +110,7 @@ const itemResolvers = {
             description: data.description,
             image_url: imageUrl,
             owner_id: context.user.id,
+            published: false,
           },
         });
       } catch (error) {

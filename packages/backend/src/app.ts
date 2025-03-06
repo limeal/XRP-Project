@@ -12,6 +12,7 @@ import path from 'path';
 import './config/passport';
 import { resolvers, typeDefs } from './graphql';
 import logger from './utils/logger';
+import { graphqlUploadExpress } from "graphql-upload-ts";
 
 export type Context = {
   req: express.Request;
@@ -23,12 +24,13 @@ async function createApolloServer(app: express.Application) {
 
   const server = new ApolloServer({
     typeDefs,
-    resolvers,
+    resolvers: resolvers as any,
     plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
     formatError: (error: any) => {
       logger.error(error);
       return error;
     },
+    csrfPrevention: true,
   });
   await server.start();
 
@@ -81,6 +83,13 @@ function createApp() {
 
   app.use(morgan('dev'));
   app.use(express.json());
+  app.use(graphqlUploadExpress({
+    maxFileSize: 10000000,
+    maxFiles: 10,
+    // If you are using framework around express like [ NestJS or Apollo Serve ]
+    // use this options overrideSendResponse to allow nestjs to handle response errors like throwing exceptions
+    overrideSendResponse: false
+  }));
 
   // Serve uploaded files - doit être après CORS et Helmet
   const uploadsPath = path.join(__dirname, '../uploads');
