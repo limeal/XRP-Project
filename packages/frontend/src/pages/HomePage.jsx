@@ -1,6 +1,14 @@
+import { useQuery } from '@apollo/client'
 import MonkeyList from '@components/MonkeyList'
-import monkeys from '@constants/monkeys'
-import { Box, Button, Container, TextField, Typography } from '@mui/material'
+import { GET_MONKEYS_QUERY } from '@graphql/item'
+import {
+  Box,
+  Button,
+  CircularProgress,
+  Container,
+  TextField,
+  Typography,
+} from '@mui/material'
 import { useContext } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AuthContext } from '../context/AuthContext'
@@ -8,6 +16,12 @@ import { AuthContext } from '../context/AuthContext'
 const HomePage = () => {
   const navigate = useNavigate()
   const { user } = useContext(AuthContext)
+
+  const { loading, error, data } = useQuery(GET_MONKEYS_QUERY)
+
+  if (loading) return <CircularProgress sx={{ mt: 4 }} />
+  if (error)
+    return <Typography color="error">Error: {error.message}</Typography>
 
   return (
     <Box
@@ -129,7 +143,7 @@ const HomePage = () => {
           Trendy Monkeys
         </Typography>
 
-        <MonkeyList monkeys={monkeys} />
+        <MonkeyList monkeys={data.items} />
       </Box>
     </Box>
   )

@@ -1,27 +1,55 @@
-import monkeys from '@constants/monkeys'
-import { Avatar, Box, Button, Container, Typography } from '@mui/material'
+import { useQuery } from '@apollo/client'
+import { GET_MONKEY_QUERY } from '@graphql/item'
+import {
+  Avatar,
+  Box,
+  Button,
+  CircularProgress,
+  Container,
+  Typography,
+} from '@mui/material'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
 const MonkeyPage = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const monkey = monkeys.find((m) => m.id === parseInt(id))
 
-  // const { loading, error, data } = useQuery(GET_MONKEY_QUERY, {
-  //   variables: { id },
-  // })
+  const { loading, error, data } = useQuery(GET_MONKEY_QUERY, {
+    variables: { id },
+  })
 
-  // if (loading) return <CircularProgress />
-  // if (error) return <Typography color="error">{error.message}</Typography>
-  // if (!data?.item) return <Typography>Monkey not found</Typography>
+  if (loading)
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    )
 
-  if (!monkey) {
+  if (error)
+    return (
+      <Container sx={{ textAlign: 'center', mt: 5 }}>
+        <Typography variant="h4" color="error">
+          {error.message}
+        </Typography>
+      </Container>
+    )
+
+  if (!data?.item)
     return (
       <Container sx={{ textAlign: 'center', mt: 5 }}>
         <Typography variant="h4">Monkey Not Found</Typography>
       </Container>
     )
-  }
+
+  const { name, description, image_url, prices, owner } = data.item
+  const price = prices.length > 0 ? `${prices[0].price} XRP` : 'Not for sale'
 
   return (
     <Box sx={{ width: '100vw', minHeight: '100vh', position: 'relative' }}>
@@ -40,6 +68,7 @@ const MonkeyPage = () => {
       >
         Home
       </Button>
+
       <Container
         disableGutters
         sx={{
@@ -55,8 +84,8 @@ const MonkeyPage = () => {
       >
         <Box
           component="img"
-          src={monkey.img}
-          alt={monkey.name}
+          src={image_url}
+          alt={name}
           sx={{
             width: { xs: '35%', md: '38%' },
             borderRadius: 2,
@@ -72,18 +101,18 @@ const MonkeyPage = () => {
             fontSize: { xs: '1.8rem', sm: '2rem', md: '3rem' },
           }}
         >
-          {monkey.name}
+          {name}
         </Typography>
 
         <Typography
           variant="h5"
           sx={{
-            color: 'green',
+            color: price === 'Not for sale' ? 'gray' : 'green',
             mb: 2,
             fontSize: { xs: '1.2rem', sm: '1.5rem', md: '2rem' },
           }}
         >
-          {monkey.price}
+          {price}
         </Typography>
 
         <Typography
@@ -94,20 +123,19 @@ const MonkeyPage = () => {
             mb: 2,
           }}
         >
-          {monkey.description}
+          {description}
         </Typography>
 
-        {/* Owner Information */}
-        {monkey.owner && (
+        {owner && (
           <Box sx={{ m: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
             <Avatar sx={{ bgcolor: 'secondary.main' }}>
-              {monkey.owner.name.charAt(0).toUpperCase()}
+              {owner.username.charAt(0).toUpperCase()}
             </Avatar>
             <Typography variant="h6">
               Owned by{' '}
               <Button
                 component={Link}
-                to={`/profile/${monkey.owner.id}`}
+                to={`/profile/${owner.id}`}
                 sx={{
                   color: '#1E3A8A',
                   fontWeight: 'bold',
@@ -115,22 +143,23 @@ const MonkeyPage = () => {
                   '&:hover': { textDecoration: 'underline' },
                 }}
               >
-                {monkey.owner.name}
+                {owner.username}
               </Button>
             </Typography>
           </Box>
         )}
 
-        <Button
-          variant="contained"
-          color="primary"
-          sx={{ fontSize: '1rem', px: 4 }}
-        >
-          Buy Now
-        </Button>
+        {prices.length > 0 && (
+          <Button
+            variant="contained"
+            color="primary"
+            sx={{ fontSize: '1rem', px: 4 }}
+          >
+            Buy Now
+          </Button>
+        )}
       </Container>
     </Box>
   )
 }
-
 export default MonkeyPage

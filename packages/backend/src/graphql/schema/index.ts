@@ -2,15 +2,10 @@ const typeDefs = `#graphql
   scalar BigInt
   scalar DateTime
 
+  # Un seul type User pour tous, avec les champs publics uniquement
   type User {
     id: String!
-    username: String
-    email: String
-    password: String
-    xrp_address: String
-    last_login_at: DateTime
-    created_at: DateTime!
-    updated_at: DateTime!
+    username: String!
     items: [Item!]!
   }
 
@@ -25,6 +20,7 @@ const typeDefs = `#graphql
     comments: [Comment!]!
     tags: [Tag!]!
     prices: [ItemPrice!]!
+    isForSale: Boolean!
   }
 
   type ItemPrice {
@@ -64,6 +60,8 @@ const typeDefs = `#graphql
     comment(id: String!): Comment
     tags: [Tag!]!
     tag(id: String!): Tag
+    userItems(userId: String!): [Item!]!
+    itemsForSale: [Item!]!
   }
 
   type Mutation {
@@ -88,8 +86,19 @@ const typeDefs = `#graphql
     
     deleteUser(id: String!): User!
 
-    createItem(name: String!, description: String!, xrp_id: String, image: String!, owner_id: String!): Item!
-    updateItem(id: String!, name: String, description: String, xrp_id: String, image: String, owner_id: String): Item!
+    createItem(
+      name: String!, 
+      description: String!, 
+      image: String! # Base64 encoded image
+    ): Item!
+
+    updateItem(
+      id: String!, 
+      name: String, 
+      description: String, 
+      image: String
+    ): Item!
+
     deleteItem(id: String!): Item!
 
     createItemPrice(item_id: String!, price: BigInt): ItemPrice!
@@ -103,6 +112,9 @@ const typeDefs = `#graphql
     createTag(entity_type: String, entity_id: String!, title: String): Tag!
     updateTag(id: String!, title: String): Tag!
     deleteTag(id: String!): Tag!
+
+    putItemForSale(itemId: String!, price: BigInt!): ItemPrice!
+    buyItem(itemId: String!): Item!
   }
 `;
 

@@ -1,46 +1,4 @@
 services:
-  # validator_1:
-  #     platform: linux/amd64
-  #     container_name: validator_1
-  #     image: "xrpllabsofficial/xrpld"
-  #     ports:
-  #       - "3002:80"
-  #       - "5006:5005"
-  #       - "4001:6006"
-  #       - "9001:51235"
-  #     volumes:
-  #       - ./packages/rippled-validators/configs/1:/config/
-  #     networks:
-  #         - xrpld-network
-
-  # validator_2:
-  #     platform: linux/amd64
-  #     container_name: validator_2
-  #     image: "xrpllabsofficial/xrpld"
-  #     ports:
-  #       - "3003:80"
-  #       - "5007:5005"
-  #       - "4002:6006"
-  #       - "9002:51235"
-  #     volumes:
-  #       - ./packages/rippled-validators/configs/2:/config/
-  #     networks:
-  #         - xrpld-network
-
-  # validator_3:
-  #     platform: linux/amd64
-  #     container_name: validator_3
-  #     image: "xrpllabsofficial/xrpld"
-  #     ports:
-  #       - "3004:80"
-  #       - "5008:5005"
-  #       - "4003:6006"
-  #       - "9003:51235"
-  #     volumes:
-  #       - ./packages/rippled-validators/configs/3:/config/
-  #     networks:
-  #         - xrpld-network
-
   postgres:
     image: postgres:latest
     restart: always
@@ -55,44 +13,29 @@ services:
     networks:
       - blockchain-network
 
-  #   backend:
-  #     build:
-  #       dockerfile: ./Dockerfile.dev
-  #       context: packages/backend
-  #     env_file:
-  #       - packages/backend/.env
-  #     depends_on:
-  #       - postgres
-  #     volumes:
-  #       - ./packages/backend:/backend
-  #     ports:
-  #       - 3000:3000
-  #     restart: unless-stopped
-  #     networks:
-  #       - blockchain-network
-  #     labels:
-  #       - dev.orbstack.domains=api.blockchain.local
-
-#   frontend:
-#     build:
-#       dockerfile: ./Dockerfile.dev
-#       context: packages/frontend
-#     env_file:
-#       - packages/frontend/.env
-#     depends_on:
-#       - backend
-#     volumes:
-#       - ./packages/frontend:/frontend
-#     ports:
-#       - 8080:8080
-#     restart: unless-stopped
-#     networks:
-#       - blockchain-network
-#     labels:
-#       - dev.orbstack.domains=app.blockchain.local
+  backend:
+    build:
+      dockerfile: ./Dockerfile.dev
+      context: packages/backend
+    env_file:
+      - packages/backend/.env
+    depends_on:
+      - postgres
+    volumes:
+      - ./packages/backend:/backend
+      - uploads_data:/backend/uploads
+    ports:
+      - 3000:3000
+      - 5555:5555
+    restart: unless-stopped
+    networks:
+      - blockchain-network
+    labels:
+      - dev.orbstack.domains=api.blockchain.local
 
 volumes:
   db_data: {}
+  uploads_data: {}
 
 networks:
   blockchain-network:

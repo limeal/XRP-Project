@@ -27,20 +27,6 @@ const MonkeyList = ({ monkeys }) => {
   const monkeysPerPage = isSmallScreen ? 2 : isMediumScreen ? 3 : 5
   const totalPages = Math.ceil(monkeys.length / monkeysPerPage)
 
-  if (!monkeys || monkeys.length === 0) {
-    return (
-      <Typography
-        sx={{
-          textAlign: 'center',
-          fontSize: '1.2rem',
-          fontWeight: 'bold',
-          color: 'gray',
-        }}
-      >
-        No monkeys found
-      </Typography>
-    )
-  }
   const handleNext = () => {
     setPage((prev) => (prev + 1) % totalPages)
   }
@@ -48,6 +34,7 @@ const MonkeyList = ({ monkeys }) => {
   const handlePrev = () => {
     setPage((prev) => (prev - 1 + totalPages) % totalPages)
   }
+
   return (
     <Box
       sx={{
@@ -82,86 +69,94 @@ const MonkeyList = ({ monkeys }) => {
       >
         {monkeys
           .slice(page * monkeysPerPage, (page + 1) * monkeysPerPage)
-          .map((monkey, index) => (
-            <Link
-              to={`/monkey/${monkey.id}`}
-              key={monkey.id || index}
-              style={{ textDecoration: 'none', color: 'inherit' }}
-            >
-              <Box
-                key={monkey.id}
-                sx={{
-                  width: { xs: '15vw', md: '12vw' },
-                  height: { xs: '11vw', md: '9vw' },
-                  minWidth: '120px',
-                  maxWidth: '190px',
-                  borderRadius: 2,
-                  overflow: 'hidden',
-                  position: 'relative',
-                  flexShrink: 0,
-                  cursor: 'pointer',
-                  transition: 'transform 0.2s',
-                  '&:hover': { transform: 'scale(1.05)' },
-                }}
-              >
-                <img
-                  src={monkey.img}
-                  alt={monkey.name}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                  }}
-                />
+          .map((monkey, index) => {
+            const latestPrice =
+              monkey.prices?.length > 0
+                ? `${monkey.prices[0].price} XRP`
+                : 'Not for sale'
 
+            return (
+              <Link
+                to={`/monkey/${monkey.id}`}
+                key={monkey.id || index}
+                style={{ textDecoration: 'none', color: 'inherit' }}
+              >
                 <Box
+                  key={monkey.id}
                   sx={{
-                    position: 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    width: '100%',
-                    bgcolor: 'rgba(0, 0, 0, 0.3)',
-                    color: 'white',
-                    textAlign: 'center',
-                    py: 1,
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    px: 1,
+                    width: { xs: '15vw', md: '12vw' },
+                    height: { xs: '11vw', md: '9vw' },
+                    minWidth: '120px',
+                    maxWidth: '190px',
+                    borderRadius: 2,
+                    overflow: 'hidden',
+                    position: 'relative',
+                    flexShrink: 0,
+                    cursor: 'pointer',
+                    transition: 'transform 0.2s',
+                    '&:hover': { transform: 'scale(1.05)' },
                   }}
                 >
-                  <Typography
-                    variant="caption"
+                  <img
+                    src={monkey.image_url}
+                    alt={monkey.name}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                    }}
+                  />
+
+                  <Box
                     sx={{
-                      flexGrow: 1,
-                      textAlign: 'left',
-                      fontSize: {
-                        xs: '0.5rem',
-                        sm: '0.57rem',
-                        md: '0.8rem',
-                      },
+                      position: 'absolute',
+                      bottom: 0,
+                      left: 0,
+                      width: '100%',
+                      bgcolor: 'rgba(0, 0, 0, 0.3)',
+                      color: 'white',
+                      textAlign: 'center',
+                      py: 1,
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      px: 1,
                     }}
                   >
-                    {monkey.name}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      fontWeight: 'bold',
-                      textAlign: 'right',
-                      fontSize: {
-                        xs: '0.5rem',
-                        sm: '0.57rem',
-                        md: '0.7rem',
-                      },
-                    }}
-                  >
-                    {monkey.price}
-                  </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        flexGrow: 1,
+                        textAlign: 'left',
+                        fontSize: {
+                          xs: '0.5rem',
+                          sm: '0.57rem',
+                          md: '0.8rem',
+                        },
+                      }}
+                    >
+                      {monkey.name}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        fontWeight: 'bold',
+                        textAlign: 'right',
+                        fontSize: {
+                          xs: '0.5rem',
+                          sm: '0.57rem',
+                          md: '0.7rem',
+                        },
+                        color: monkey.prices?.length > 0 ? 'lightgreen' : 'red',
+                      }}
+                    >
+                      {latestPrice}
+                    </Typography>
+                  </Box>
                 </Box>
-              </Box>
-            </Link>
-          ))}
+              </Link>
+            )
+          })}
       </Box>
 
       <IconButton

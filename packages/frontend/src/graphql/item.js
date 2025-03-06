@@ -17,3 +17,20 @@ export const GET_MONKEY_QUERY = gql`
     }
   }
 `
+
+export const GET_MONKEYS_QUERY = gql`
+  query GetMonkeys {
+    items {
+      id
+      name
+      image_url
+      prices {
+        price
+      }
+      owner {
+        id
+        username
+      }
+    }
+  }
+`

@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import config from '../../config';
 import prisma from '../../prisma/client';
-import { XRPClient } from '../../xrpl/xrp-client';
+import { generateSeed } from '../../xrpl/client';
 
 type CreateUserInput = {
   username: string;
@@ -14,16 +14,20 @@ type CreateUserInput = {
 
 const userResolvers = {
   Query: {
-    users: async (_: any, __: any, { user }: { user?: User }) => {
-      if (!user) throw new Error('Not authenticated');
-      return await prisma.user.findMany();
+    users: async () => {
+      return await prisma.user.findMany({
+        select: {
+          id: true,
+          username: true,
+        },
+      });
     },
-    user: async (_: any, { id }: { id: string }, { user }: { user?: User }) => {
-      if (!user) throw new Error('Not authenticated');
+    user: async (_: any, { id }: { id: string }) => {
       return await prisma.user.findUnique({
         where: { id },
-        include: {
-          items: true,
+        select: {
+          id: true,
+          username: true,
         },
       });
     },
@@ -34,15 +38,18 @@ const userResolvers = {
       { username, email, password }: Omit<CreateUserInput, 'xrp_seed'>
     ) => {
       const hashedPassword = await bcrypt.hash(password, 10);
-      const xrp = new XRPClient();
-      const account = await xrp.createTestnetAccount();
+      const xrp_seed = generateSeed();
 
       const user = await prisma.user.create({
         data: {
           username,
           email,
           password: hashedPassword,
-          xrp_seed: account.seed,
+          xrp_seed,
+        },
+        select: {
+          id: true,
+          username: true,
         },
       });
 
@@ -56,7 +63,15 @@ const userResolvers = {
       _: any,
       { email, password }: { email: string; password: string }
     ) => {
-      const user = await prisma.user.findUnique({ where: { email } });
+      const user = await prisma.user.findUnique({
+        where: { email },
+        select: {
+          id: true,
+          username: true,
+          password: true,
+        },
+      });
+
       if (!user) throw new Error('User not found');
 
       const isValid = await bcrypt.compare(password, user.password);
@@ -66,7 +81,9 @@ const userResolvers = {
         expiresIn: config.jwt.expiresIn,
       } as SignOptions);
 
-      return { token, user };
+      // Utiliser un nom différent pour éviter le conflit
+      const { password: pwd, ...publicUser } = user;
+      return { token, user: publicUser };
     },
     updateUser: async (
       _: any,
@@ -80,6 +97,10 @@ const userResolvers = {
       return await prisma.user.update({
         where: { id: data.id },
         data,
+        select: {
+          id: true,
+          username: true,
+        },
       });
     },
     deleteUser: async (
@@ -90,6 +111,23 @@ const userResolvers = {
       if (!user) throw new Error('Not authenticated');
       return await prisma.user.delete({
         where: { id },
+        select: {
+          id: true,
+          username: true,
+        },
+      });
+    },
+  },
+  User: {
+    items: async (parent: any) => {
+      return await prisma.item.findMany({
+        where: { owner_id: parent.id },
+        include: {
+          prices: {
+            orderBy: { created_at: 'desc' },
+            take: 1,
+          },
+        },
       });
     },
   },
