@@ -34,3 +34,12 @@ export const GET_MONKEYS_QUERY = gql`
     }
   }
 `
+
+export const PUT_ITEM_FOR_SALE_MUTATION = gql`
+  mutation PutItemForSale($itemId: String!, $price: String!) {
+    putItemForSale(itemId: $itemId, price: $price) {
+      id
+      price
+    }
+  }
+`

@@ -6,9 +6,7 @@ import tagResolvers from './tag';
 import userResolvers from './user';
 
 export default [
-  {
-    BigInt: BigIntScalar,
-  },
+  { BigInt: BigIntScalar },
   userResolvers,
   itemResolvers,
   itemPriceResolvers,

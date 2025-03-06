@@ -136,28 +136,29 @@ const itemResolvers = {
     },
     putItemForSale: async (
       _: any,
-      { itemId, price }: { itemId: string; price: bigint },
+      { itemId, price }: { itemId: string; price: string },
       context: Context
     ) => {
       if (!context.user) {
         throw new Error('Not authenticated');
       }
 
-      // Verify item ownership
       const item = await prisma.item.findUnique({
         where: { id: itemId },
       });
 
-      if (!item || item.owner_id !== context.user.id) {
-        throw new Error('Item not found or not owned by user');
+      if (!item) {
+        throw new Error('Item not found');
       }
 
-      // Create new price entry
+      if (item.owner_id !== context.user.id) {
+        throw new Error('You do not own this item and cannot put it for sale');
+      }
+
       return await prisma.itemPrice.create({
         data: {
           item_id: itemId,
-          price: price,
-          // offer_xrp_id will be updated later when XRP integration is added
+          price: BigInt(price),
         },
       });
     },

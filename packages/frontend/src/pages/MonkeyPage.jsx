@@ -1,18 +1,23 @@
 import { useQuery } from '@apollo/client'
+import SellButton from '@components/SellButton'
+import SellModal from '@components/SellModal'
+import { AuthContext } from '@context/AuthContext'
 import { GET_MONKEY_QUERY } from '@graphql/item'
 import {
-  Avatar,
   Box,
   Button,
   CircularProgress,
   Container,
   Typography,
 } from '@mui/material'
+import { useContext, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
 const MonkeyPage = () => {
   const { id } = useParams()
   const navigate = useNavigate()
+  const [isModalOpen, setModalOpen] = useState(false)
+  const { user: loggedInUser } = useContext(AuthContext)
 
   const { loading, error, data } = useQuery(GET_MONKEY_QUERY, {
     variables: { id },
@@ -48,8 +53,7 @@ const MonkeyPage = () => {
       </Container>
     )
 
-  const { name, description, image_url, prices, owner } = data.item
-  const price = prices.length > 0 ? `${prices[0].price} XRP` : 'Not for sale'
+  const isOwner = data?.item && loggedInUser?.id === data.item.owner.id
 
   return (
     <Box sx={{ width: '100vw', minHeight: '100vh', position: 'relative' }}>
@@ -68,7 +72,6 @@ const MonkeyPage = () => {
       >
         Home
       </Button>
-
       <Container
         disableGutters
         sx={{
@@ -84,8 +87,8 @@ const MonkeyPage = () => {
       >
         <Box
           component="img"
-          src={image_url}
-          alt={name}
+          src={data.item.image_url}
+          alt={data.item.name}
           sx={{
             width: { xs: '35%', md: '38%' },
             borderRadius: 2,
@@ -101,19 +104,32 @@ const MonkeyPage = () => {
             fontSize: { xs: '1.8rem', sm: '2rem', md: '3rem' },
           }}
         >
-          {name}
+          {data.item.name}
         </Typography>
 
-        <Typography
-          variant="h5"
+        <Box
           sx={{
-            color: price === 'Not for sale' ? 'gray' : 'green',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 2,
             mb: 2,
-            fontSize: { xs: '1.2rem', sm: '1.5rem', md: '2rem' },
           }}
         >
-          {price}
-        </Typography>
+          <Typography
+            variant="h5"
+            sx={{
+              color: 'green',
+              fontSize: { xs: '1.2rem', sm: '1.5rem', md: '2rem' },
+            }}
+          >
+            {data.item.prices?.length > 0
+              ? `${data.item.prices[0].price} XRP`
+              : 'Not for Sale'}
+          </Typography>
+
+          {isOwner && <SellButton onClick={() => setModalOpen(true)} />}
+        </Box>
 
         <Typography
           variant="body1"
@@ -123,19 +139,16 @@ const MonkeyPage = () => {
             mb: 2,
           }}
         >
-          {description}
+          {data.item.description}
         </Typography>
 
-        {owner && (
+        {data.item.owner && (
           <Box sx={{ m: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Avatar sx={{ bgcolor: 'secondary.main' }}>
-              {owner.username.charAt(0).toUpperCase()}
-            </Avatar>
             <Typography variant="h6">
               Owned by{' '}
               <Button
                 component={Link}
-                to={`/profile/${owner.id}`}
+                to={`/profile/${data.item.owner.id}`}
                 sx={{
                   color: '#1E3A8A',
                   fontWeight: 'bold',
@@ -143,23 +156,20 @@ const MonkeyPage = () => {
                   '&:hover': { textDecoration: 'underline' },
                 }}
               >
-                {owner.username}
+                {data.item.owner.username}
               </Button>
             </Typography>
           </Box>
         )}
 
-        {prices.length > 0 && (
-          <Button
-            variant="contained"
-            color="primary"
-            sx={{ fontSize: '1rem', px: 4 }}
-          >
-            Buy Now
-          </Button>
-        )}
+        <SellModal
+          open={isModalOpen}
+          handleClose={() => setModalOpen(false)}
+          itemId={id}
+        />
       </Container>
     </Box>
   )
 }
+
 export default MonkeyPage

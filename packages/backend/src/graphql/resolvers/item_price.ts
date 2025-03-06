@@ -1,8 +1,7 @@
 import { ItemPrice } from '@prisma/client';
-import prisma from '../../prisma/client';
 import { Context } from '../../app';
+import prisma from '../../prisma/client';
 import { XRPClient } from '../../xrpl/xrp-client';
-import { XRPToken } from '../../xrpl/xrp-token';
 
 const itemPriceResolvers = {
   Query: {
@@ -21,9 +20,14 @@ const itemPriceResolvers = {
         where: { id: parent.item_id },
       });
     },
+    price: (parent: any) => parent.price.toString(),
   },
   Mutation: {
-    createItemPrice: async (_: any, data: Omit<ItemPrice, 'id'>, context: Context) => {
+    createItemPrice: async (
+      _: any,
+      data: Omit<ItemPrice, 'id'>,
+      context: Context
+    ) => {
       const user = context.user;
       if (!user || !user.xrp_seed) {
         throw new Error('User not found');
@@ -41,17 +45,25 @@ const itemPriceResolvers = {
       }
 
       const xrpClient = new XRPClient();
-      const offer = await xrpClient.createOfferForToken('sell', `${data.price}`, user.xrp_seed, item.xrp_id ?? '');
+      const offer = await xrpClient.createOfferForToken(
+        'sell',
+        `${data.price}`,
+        user.xrp_seed,
+        item.xrp_id ?? ''
+      );
 
       // TODO: Call createOfferForToken
       return await prisma.itemPrice.create({
         data: {
           ...data,
           offer_xrp_id: `${offer.id}`,
-        }
+        },
       });
     },
-    updateItemPrice: async (_: any, data: Partial<Omit<ItemPrice, 'id'>> & { id: string }) => {
+    updateItemPrice: async (
+      _: any,
+      data: Partial<Omit<ItemPrice, 'id'>> & { id: string }
+    ) => {
       return await prisma.itemPrice.update({
         where: { id: data.id },
         data,
@@ -64,7 +76,6 @@ const itemPriceResolvers = {
       });
     },
   },
-}; 
-
+};
 
 export default itemPriceResolvers;

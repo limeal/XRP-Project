@@ -19,7 +19,7 @@ const typeDefs = `#graphql
     owner: User!
     comments: [Comment!]!
     tags: [Tag!]!
-    prices: [ItemPrice!]!
+    prices: [ItemPrice]
     isForSale: Boolean!
   }
 
@@ -113,7 +113,7 @@ const typeDefs = `#graphql
     updateTag(id: String!, title: String): Tag!
     deleteTag(id: String!): Tag!
 
-    putItemForSale(itemId: String!, price: BigInt!): ItemPrice!
+    putItemForSale(itemId: String!, price: String!): ItemPrice!
     buyItem(itemId: String!): Item!
   }
 `;
