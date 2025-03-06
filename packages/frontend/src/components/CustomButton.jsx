@@ -1,11 +1,11 @@
 import styled from 'styled-components'
 
 // eslint-disable-next-line react/prop-types
-const SellButton = ({ onClick }) => {
+const CustomButton = ({ text, color, onClick }) => {
   return (
     <StyledWrapper>
-      <button onClick={onClick}>
-        <span>SELL</span>
+      <button onClick={onClick} style={{ backgroundColor: { color } }}>
+        <span>{text}</span>
       </button>
     </StyledWrapper>
   )
@@ -52,4 +52,4 @@ const StyledWrapper = styled.div`
   }
 `
 
-export default SellButton
+export default CustomButton

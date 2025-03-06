@@ -43,3 +43,19 @@ export const PUT_ITEM_FOR_SALE_MUTATION = gql`
     }
   }
 `
+
+export const BUY_ITEM_MUTATION = gql`
+  mutation BuyItem($itemId: String!) {
+    buyItem(itemId: $itemId) {
+      id
+      owner {
+        id
+        username
+      }
+      prices {
+        id
+        price
+      }
+    }
+  }
+`

@@ -171,14 +171,10 @@ const itemResolvers = {
         throw new Error('Not authenticated');
       }
 
-      // Get item and its latest price
       const item = await prisma.item.findUnique({
         where: { id: itemId },
         include: {
-          prices: {
-            orderBy: { created_at: 'desc' },
-            take: 1,
-          },
+          prices: true,
         },
       });
 
@@ -190,17 +186,17 @@ const itemResolvers = {
         throw new Error('Cannot buy your own item');
       }
 
-      // Update item ownership
+      await prisma.itemPrice.deleteMany({
+        where: { item_id: itemId },
+      });
+
       const updatedItem = await prisma.item.update({
         where: { id: itemId },
         data: {
           owner_id: context.user.id,
-          prices: {
-            update: {
-              where: { id: item.prices[0].id },
-              data: { offer_xrp_id: null }, // Remove the offer
-            },
-          },
+        },
+        include: {
+          owner: true,
         },
       });
 

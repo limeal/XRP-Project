@@ -1,8 +1,9 @@
-import { useQuery } from '@apollo/client'
-import SellButton from '@components/SellButton'
+import { useMutation, useQuery } from '@apollo/client'
+import CustomButton from '@components/CustomButton'
 import SellModal from '@components/SellModal'
 import { AuthContext } from '@context/AuthContext'
-import { GET_MONKEY_QUERY } from '@graphql/item'
+import { BUY_ITEM_MUTATION, GET_MONKEY_QUERY } from '@graphql/item'
+import { GET_USER_QUERY } from '@graphql/user'
 import {
   Box,
   Button,
@@ -10,7 +11,7 @@ import {
   Container,
   Typography,
 } from '@mui/material'
-import { useContext, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
 const MonkeyPage = () => {
@@ -22,6 +23,22 @@ const MonkeyPage = () => {
   const { loading, error, data } = useQuery(GET_MONKEY_QUERY, {
     variables: { id },
   })
+
+  const [buyItem, { loading: buying, error: buyError }] = useMutation(
+    BUY_ITEM_MUTATION,
+    {
+      refetchQueries: [
+        { query: GET_MONKEY_QUERY, variables: { id } },
+        { query: GET_USER_QUERY, variables: { id: loggedInUser.id } },
+      ],
+    }
+  )
+
+  useEffect(() => {
+    if (buyError) {
+      console.error('Error selling monkey:', buyError)
+    }
+  }, [buyError])
 
   if (loading)
     return (
@@ -54,6 +71,8 @@ const MonkeyPage = () => {
     )
 
   const isOwner = data?.item && loggedInUser?.id === data.item.owner.id
+  const isForSale = data.item.prices?.length > 0
+  const price = isForSale ? `${data.item.prices[0].price} XRP` : 'Not for Sale'
 
   return (
     <Box sx={{ width: '100vw', minHeight: '100vh', position: 'relative' }}>
@@ -123,12 +142,22 @@ const MonkeyPage = () => {
               fontSize: { xs: '1.2rem', sm: '1.5rem', md: '2rem' },
             }}
           >
-            {data.item.prices?.length > 0
-              ? `${data.item.prices[0].price} XRP`
-              : 'Not for Sale'}
+            {price}
           </Typography>
-
-          {isOwner && <SellButton onClick={() => setModalOpen(true)} />}
+          {isOwner && !isForSale && (
+            <CustomButton
+              text="Sell"
+              onClick={() => setModalOpen(true)}
+              color="blue"
+            />
+          )}
+          {!isOwner && isForSale && (
+            <CustomButton
+              text={buying ? 'Buying...' : 'Buy'}
+              onClick={() => buyItem({ variables: { itemId: id } })}
+              color="green"
+            />
+          )}
         </Box>
 
         <Typography

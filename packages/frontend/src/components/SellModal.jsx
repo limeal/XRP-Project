@@ -7,7 +7,10 @@ import { useState } from 'react'
 const SellModal = ({ open, handleClose, itemId }) => {
   const [price, setPrice] = useState('')
   const [putItemForSale, { loading, error }] = useMutation(
-    PUT_ITEM_FOR_SALE_MUTATION
+    PUT_ITEM_FOR_SALE_MUTATION,
+    {
+      refetchQueries: [{ query: GET_MONKEY_QUERY, variables: { id: itemId } }],
+    }
   )
 
   const handleSubmit = async () => {
@@ -19,29 +22,8 @@ const SellModal = ({ open, handleClose, itemId }) => {
           itemId,
           price: price.toString(),
         },
-        update: (cache, { data }) => {
-          const newPrice = data?.putItemForSale?.price
-          if (!newPrice) return
-
-          const cachedData = cache.readQuery({
-            query: GET_MONKEY_QUERY,
-            variables: { id: itemId },
-          })
-
-          if (cachedData?.item) {
-            cache.writeQuery({
-              query: GET_MONKEY_QUERY,
-              variables: { id: itemId },
-              data: {
-                item: {
-                  ...cachedData.item,
-                  prices: [{ price: newPrice }],
-                },
-              },
-            })
-          }
-        },
       })
+
       handleClose()
     } catch (error) {
       console.error('Error selling monkey:', error)
