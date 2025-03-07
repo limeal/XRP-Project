@@ -179,11 +179,11 @@ const itemResolvers = {
         throw new Error('Item not found');
 
       const xrpClient = new XRPClient(context.xrpHeaders?.address);
-      await xrpClient.createNFTToken(new XRPToken(item));
+      const tokenId = await xrpClient.createNFTToken(item.image_url);
 
       return prisma.item.update({
         where: { id: itemId },
-        data: { published: true },
+        data: { published: true, xrp_id: tokenId },
         select: {
           id: true,
           name: true,

@@ -3,6 +3,7 @@
 import {
   Amount,
   Client,
+  convertStringToHex,
   NFTokenAcceptOffer,
   NFTokenCreateOffer,
   NFTokenCreateOfferFlags,
@@ -23,7 +24,7 @@ interface IXRPClient {
 
   // Equivalent to mint
   createNFTToken(
-    token: XRPToken,
+    imageUrl: string
   ): Promise<string>;
 
   createOfferForToken(
@@ -37,7 +38,6 @@ interface IXRPClient {
     offerId: string
   ): Promise<string>;
 
-  getAccountTokens(accountAddress: string): Promise<Array<XRPToken>>;
   getAccountBalance(accountAddress: string): Promise<number>;
 }
 
@@ -115,14 +115,12 @@ export class XRPClient implements IXRPClient {
    * @param {Pick<NFTokenMint, 'Flags' | 'TransferFee'>} transactionOptions - Optional transaction options
    * @returns {Promise<TxResponse<NFTokenMint>>} The transaction result
    */
-  async createNFTToken(
-    token: XRPToken
-  ) {
+  async createNFTToken(imageUrl: string) {
     const meta = await this.subscribeAndExtractMeta(
       {
         TransactionType: 'NFTokenMint',
         Account: this.accountAddress,
-        URI: token.encode(),
+        URI: convertStringToHex(imageUrl),
         NFTokenTaxon: 0, // Required field, can be any value from 0 to 2^32-1
         Flags: NFTokenMintFlags.tfBurnable | NFTokenMintFlags.tfTransferable,
       }
@@ -191,30 +189,6 @@ export class XRPClient implements IXRPClient {
       command: 'tx',
       transaction: transactionId,
     });
-  }
-
-  /**
-   * Get all NFTokens owned by an account
-   *
-   * @param {string} accountAddress - The account address to check
-   * @returns {Promise<Array>} List of NFTokens owned by the account
-   */
-  async getAccountTokens(accountAddress: string): Promise<Array<XRPToken>> {
-    try {
-      const response = await this.client.request({
-        command: 'account_nfts',
-        account: accountAddress,
-      });
-
-      return response.result.account_nfts
-        .filter((token) => token.URI)
-        .map((token) => {
-          return new XRPToken(token);
-        });
-    } catch (error) {
-      console.error('Error getting account NFTs:', error);
-      throw error;
-    }
   }
 
   /**
