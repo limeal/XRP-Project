@@ -3,6 +3,7 @@ import { Context } from '../../app';
 import prisma from '../../prisma/client';
 import { storage } from '../../services/storage';
 import { XRPClient } from '../../xrpl/xrp-client';
+import { FileUpload } from 'graphql-upload-ts';
 
 const itemResolvers = {
   Query: {
@@ -81,45 +82,33 @@ const itemResolvers = {
   Mutation: {
     createItem: async (
       _: any,
-      data: {
-        name: string;
-        description: string;
-        image: any;
-      },
+      { name, description, image }: { name: string; description: string; image: FileUpload },
       context: Context
     ) => {
-      if (!context.user) {
-        throw new Error('Not authenticated');
-      }
-
       try {
-        // Validate image format
-        if (!data.image.startsWith('data:image/')) {
-          throw new Error(
-            'Invalid image format. Must be a data URL starting with data:image/'
-          );
+        if (!context.user) {
+          throw new Error('You must be logged in to create an item');
         }
 
-        const timestamp = Date.now();
-        const filename = `nft-${timestamp}.png`;
-        const imageUrl = await storage.saveFile(data.image, filename);
+        // Sauvegarder l'image avec le nom de l'item
+        const imageUrl = await storage.saveFile(image, name);
 
-        // Create item in database
-        return prisma.item.create({
+        // Créer l'item
+        const item = await prisma.item.create({
           data: {
-            name: data.name,
-            description: data.description,
+            name,
+            description,
             image_url: imageUrl,
             owner_id: context.user.id,
-            published: false,
           },
         });
-      } catch (error) {
-        console.error('Error creating item:', error);
+
+        return item;
+      } catch (error: unknown) {
         if (error instanceof Error) {
           throw new Error(`Failed to create item: ${error.message}`);
         }
-        throw new Error('Failed to create item');
+        throw new Error('Failed to create item: Unknown error');
       }
     },
     updateItem: async (

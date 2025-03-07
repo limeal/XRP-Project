@@ -2,10 +2,15 @@ import { PrismaClient } from '@prisma/client';
 import fs from 'fs';
 import path from 'path';
 import { storage } from '../services/storage';
+import bcrypt from 'bcryptjs';
+import { FileUpload } from 'graphql-upload-ts';
+import { Readable } from 'stream';
 
 const prisma = new PrismaClient();
 
-const adminId = '34a132b6-0921-4a66-bcff-5d2e72a03c11'; // Admin ID
+const ADMIN_ID = '34a132b6-0921-4a66-bcff-5d2e72a03c11';
+const ADMIN_EMAIL = 'admin@example.com';
+const ADMIN_PASSWORD = 'admin123';
 
 const monkeys = [
   {
@@ -70,46 +75,135 @@ const monkeys = [
   },
 ];
 
-async function seed() {
-  console.log('Seeding database with monkeys...');
+async function cleanupPinata() {
+  try {
+    // Récupérer tous les items
+    const items = await prisma.item.findMany({
+      select: { image_url: true }
+    });
 
-  for (const monkey of monkeys) {
-    try {
-      const imagePath = path.join(
-        __dirname,
-        '../../public/images/',
-        monkey.imagePath
-      );
-      if (!fs.existsSync(imagePath)) {
-        console.error(`Image not found: ${imagePath}`);
-        continue;
+    // Extraire les CIDs des URLs
+    const cids = items.map(item => {
+      const url = new URL(item.image_url);
+      return url.pathname.split('/').pop();
+    });
+
+    // Unpin chaque image de Pinata
+    for (const cid of cids) {
+      if (cid) {
+        await storage.unpinFile(cid);
+        console.log(`Unpinned file with CID: ${cid}`);
       }
-
-      const imageBuffer = fs.readFileSync(imagePath);
-      const base64Image = `data:image/png;base64,${imageBuffer.toString(
-        'base64'
-      )}`;
-
-      const imageUrl = await storage.saveFile(base64Image, monkey.imagePath);
-
-      await prisma.item.create({
-        data: {
-          name: monkey.name,
-          description: monkey.description,
-          image_url: imageUrl,
-          owner: { connect: { id: adminId } },
-        },
-      });
-
-      console.log(`Added ${monkey.name} to database`);
-    } catch (error) {
-      console.error(`Error adding ${monkey.name}:`, error);
     }
+  } catch (error) {
+    console.error('Error cleaning up Pinata:', error);
   }
-
-  console.log('Monkeys seeded successfully!');
-  await prisma.$disconnect();
 }
+
+async function createAdmin() {
+  const hashedPassword = await bcrypt.hash(ADMIN_PASSWORD, 10);
+  
+  try {
+    const admin = await prisma.user.upsert({
+      where: { id: ADMIN_ID },
+      update: {},
+      create: {
+        id: ADMIN_ID,
+        email: ADMIN_EMAIL,
+        username: 'admin',
+        password: hashedPassword,
+        is_superadmin: true
+      }
+    });
+    
+    console.log('Admin account created:', admin.username);
+    return admin;
+  } catch (error) {
+    console.error('Error creating admin:', error);
+    throw error;
+  }
+}
+
+async function seed() {
+  try {
+    // Cleanup existant
+    console.log('Cleaning up existing data...');
+    await cleanupPinata();
+    await prisma.item.deleteMany();
+    
+    // Créer l'admin
+    console.log('Creating admin account...');
+    await createAdmin();
+
+    // Seed des singes
+    console.log('Seeding database with monkeys...');
+    for (const monkey of monkeys) {
+      try {
+        const imagePath = path.join(
+          __dirname,
+          '../../public/images/',
+          monkey.imagePath
+        );
+        if (!fs.existsSync(imagePath)) {
+          console.error(`Image not found: ${imagePath}`);
+          continue;
+        }
+
+        // Créer un File à partir de l'image
+        const imageBuffer = fs.readFileSync(imagePath);
+        const file = {
+          createReadStream: () => {
+            const stream = fs.createReadStream(imagePath) as fs.ReadStream & {
+              _pos?: number;
+              _writeStream?: fs.WriteStream;
+            };
+            return stream;
+          },
+          filename: monkey.imagePath,
+          mimetype: 'image/jpeg',
+          encoding: '7bit',
+          fieldName: 'file',
+          capacitor: {
+            fileName: monkey.imagePath,
+            encoding: '7bit',
+            mimeType: 'image/jpeg'
+          }
+        } as unknown as FileUpload;
+
+        // Upload sur Pinata avec le nom du singe
+        const imageUrl = await storage.saveFile(file, monkey.name);
+
+        // Créer l'item
+        await prisma.item.create({
+          data: {
+            name: monkey.name,
+            description: monkey.description,
+            image_url: imageUrl,
+            owner: { connect: { id: ADMIN_ID } },
+          },
+        });
+
+        console.log(`Added ${monkey.name} to database`);
+      } catch (error) {
+        console.error(`Error adding ${monkey.name}:`, error);
+      }
+    }
+
+    console.log('Seeding completed successfully!');
+  } catch (error) {
+    console.error('Error during seeding:', error);
+    throw error;
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+// Gérer le nettoyage lors de l'arrêt
+process.on('SIGINT', async () => {
+  console.log('Cleaning up before exit...');
+  await cleanupPinata();
+  process.exit(0);
+});
 
 seed().catch((e) => {
   console.error('Error seeding database:', e);
