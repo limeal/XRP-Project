@@ -37,7 +37,6 @@ const userResolvers = {
       { username, email, password }: Omit<CreateUserInput, 'xrp_seed'>
     ) => {
       const hashedPassword = await bcrypt.hash(password, 10);
-      const xrp_seed = 'abcde';
 
       const user = await prisma.user.create({
         data: {
@@ -114,44 +113,6 @@ const userResolvers = {
           username: true,
         },
       });
-    },
-    linkCrossmark: async (
-      _: any,
-      {
-        userId,
-        xrpAddress,
-        publicKey,
-        signature,
-      }: {
-        userId: string;
-        xrpAddress: string;
-        publicKey: string;
-        signature: string;
-      }
-    ) => {
-      try {
-        await prisma.user.update({
-          where: { id: userId },
-          data: {
-            xrp_address: xrpAddress,
-            xrp_publicKey: publicKey,
-            xrp_signature: signature,
-          },
-        });
-
-        return {
-          success: true,
-          walletAddress: xrpAddress,
-          publicKey,
-          signature,
-        };
-      } catch (error) {
-        console.error('Crossmark linking failed:', error);
-        return {
-          success: false,
-          error: (error as Error).message,
-        };
-      }
     },
   },
   User: {

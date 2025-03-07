@@ -25,11 +25,11 @@ const itemPriceResolvers = {
   Mutation: {
     createItemPrice: async (
       _: any,
-      data: Omit<ItemPrice, 'id'>,
+      data: Pick<ItemPrice, 'item_id' | 'price'>,
       context: Context
     ) => {
-      const user = context.user;
-      if (!user || !user.xrp_seed) {
+      const { user, xrpHeaders } = context;
+      if (!user || !xrpHeaders) {
         throw new Error('User not found');
       }
 
@@ -44,15 +44,13 @@ const itemPriceResolvers = {
         throw new Error('Item not found');
       }
 
-      const xrpClient = new XRPClient();
+      const xrpClient = new XRPClient({ mnemonic: xrpHeaders.mnemonic, address: xrpHeaders.address });
       const offer = await xrpClient.createOfferForToken(
         'sell',
         `${data.price}`,
-        user.xrp_seed,
         item.xrp_id ?? ''
       );
 
-      // TODO: Call createOfferForToken
       return await prisma.itemPrice.create({
         data: {
           ...data,
@@ -70,7 +68,6 @@ const itemPriceResolvers = {
       });
     },
     deleteItemPrice: async (_: any, { id }: { id: string }) => {
-      // TODO: Call cancelOfferForToken
       return await prisma.itemPrice.delete({
         where: { id },
       });

@@ -33,14 +33,6 @@ const typeDefs = `#graphql
     item: Item!
   }
 
-  type LinkCrossmarkResponse {
-    success: Boolean!
-    walletAddress: String
-    publicKey: String
-    signature: String
-    error: String
-  }
-
   type Comment {
     id: String!
     entity_type: String
@@ -126,8 +118,6 @@ const typeDefs = `#graphql
 
     putItemForSale(itemId: String!, price: String!): ItemPrice!
     buyItem(itemId: String!): Item!
-
-    linkCrossmark(userId: String!, xrpAddress: String!, publicKey: String!, signature: String): LinkCrossmarkResponse
 
     publishItem(itemId: String!): Item!
   }

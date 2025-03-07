@@ -17,6 +17,10 @@ import { graphqlUploadExpress } from "graphql-upload-ts";
 export type Context = {
   req: express.Request;
   user?: User;
+  xrpHeaders?: {
+    address: string;
+    mnemonic: string;
+  };
 };
 
 async function createApolloServer(app: express.Application) {
@@ -40,6 +44,13 @@ async function createApolloServer(app: express.Application) {
     '/graphql',
     expressMiddleware(server, {
       context: async ({ req }) => {
+        const xrpHeaders = {
+          address: req.headers['x-xrp-address'] as string,
+          mnemonic: req.headers['x-xrp-mnemonic'] as string,
+        };
+
+        console.log('xrpHeaders', xrpHeaders);
+
         // Vérifier le token JWT
         return new Promise((resolve) => {
           passport.authenticate(
@@ -47,9 +58,9 @@ async function createApolloServer(app: express.Application) {
             { session: false },
             (err: Error | null, user: User | false) => {
               if (err || !user) {
-                resolve({ req, user: undefined });
+                resolve({ req, user: undefined, xrpHeaders: undefined });
               } else {
-                resolve({ req, user: user as User });
+                resolve({ req, user: user as User, xrpHeaders });
               }
             }
           )(req);

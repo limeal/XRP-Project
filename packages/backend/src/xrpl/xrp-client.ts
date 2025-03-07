@@ -28,13 +28,11 @@ interface IXRPClient {
   createOfferForToken(
     type: 'sell' | 'buy',
     price: Amount,
-    ownerSeed: string,
     tokenId: string
   ): Promise<TxResponse<NFTokenCreateOffer>>;
 
   acceptOfferForToken(
     type: 'sell' | 'buy',
-    buyerSeed: string,
     offerId: string
   ): Promise<TxResponse<NFTokenAcceptOffer>>;
 
@@ -43,10 +41,26 @@ interface IXRPClient {
 }
 
 export class XRPClient implements IXRPClient {
+  private serverType: 'devnet' | 'altnet';
   private client: Client;
+  private wallet: Wallet;
 
-  constructor(private readonly serverType: 'devnet' | 'altnet' = 'altnet') {
-    this.client = new Client(`wss://s.${serverType}.rippletest.net:51233`);
+  constructor(
+    options: {
+      serverType?: 'devnet' | 'altnet'
+      mnemonic: string;
+      address: string;
+    } = {
+      serverType: 'altnet',
+      mnemonic: '',
+      address: '',
+    }
+  ) {
+    this.serverType = options.serverType ?? 'altnet';
+    this.client = new Client(`wss://s.${options.serverType}.rippletest.net:51233`);
+    this.wallet = Wallet.fromSeed(options.mnemonic, {
+      masterAddress: options.address,
+    });
   }
 
   async connect() {
@@ -84,14 +98,25 @@ export class XRPClient implements IXRPClient {
    * @returns {Promise<TxResponse<T>>} The transaction result
    */
   private async submitTransaction<T extends SubmittableTransaction>(
-    transaction: T,
-    wallet: Wallet
+    transaction: T
   ) {
     const client = await this.getClient();
 
     return client.submitAndWait(transaction, {
-      wallet,
+      wallet: this.wallet,
     });
+  }
+
+  private async signAndSubmitTransaction<T extends SubmittableTransaction>(
+    transaction: T
+  ) {
+    const signedTransaction = this.wallet.sign(transaction);
+
+    const result = await this.client.submitAndWait(signedTransaction.tx_blob, {
+      wallet: this.wallet,
+    });
+
+    return result as TxResponse<T>;
   }
 
   /**
@@ -107,18 +132,15 @@ export class XRPClient implements IXRPClient {
     token: XRPToken,
     transactionOptions?: Pick<NFTokenMint, 'Flags' | 'TransferFee'>
   ) {
-    const issuerWallet = Wallet.fromSeed(issuerSeed);
-
-    return this.submitTransaction<NFTokenMint>(
+    return this.signAndSubmitTransaction<NFTokenMint>(
       {
         TransactionType: 'NFTokenMint',
-        Account: issuerWallet.address,
+        Account: this.wallet.address,
         URI: token.encode(),
         NFTokenTaxon: 0, // Required field, can be any value from 0 to 2^32-1
         LastLedgerSequence: (await this.client.getLedgerIndex()) + 20,
         ...transactionOptions,
-      },
-      issuerWallet
+      }
     );
   }
 
@@ -133,20 +155,16 @@ export class XRPClient implements IXRPClient {
   async createOfferForToken(
     type: 'sell' | 'buy',
     price: Amount,
-    ownerSeed: string,
     tokenId: string
   ) {
-    const ownerWallet = Wallet.fromSeed(ownerSeed);
-
-    return this.submitTransaction<NFTokenCreateOffer>(
+    return this.signAndSubmitTransaction<NFTokenCreateOffer>(
       {
         TransactionType: 'NFTokenCreateOffer',
-        Account: ownerWallet.address,
+        Account: this.wallet.address,
         Amount: price,
         NFTokenID: tokenId,
         Flags: type === 'sell' ? NFTokenCreateOfferFlags.tfSellNFToken : 0,
-      },
-      ownerWallet
+      }
     );
   }
 
@@ -159,19 +177,15 @@ export class XRPClient implements IXRPClient {
    */
   async acceptOfferForToken(
     type: 'sell' | 'buy',
-    buyerSeed: string,
     offerId: string
   ) {
-    const buyerWallet = Wallet.fromSeed(buyerSeed);
-
-    return this.submitTransaction<NFTokenAcceptOffer>(
+    return this.signAndSubmitTransaction<NFTokenAcceptOffer>(
       {
         TransactionType: 'NFTokenAcceptOffer',
-        Account: buyerWallet.address,
+        Account: this.wallet.address,
         NFTokenSellOffer: type === 'sell' ? offerId : undefined,
         NFTokenBuyOffer: type === 'buy' ? offerId : undefined,
-      },
-      buyerWallet
+      }
     );
   }
 
@@ -212,51 +226,5 @@ export class XRPClient implements IXRPClient {
     });
 
     return Number(response.result.account_data.Balance);
-  }
-
-  /**
-   * Create a new account on the XRPL testnet with some initial XRP
-   * Useful for testing purposes
-   *
-   * @returns {Promise<object>} The wallet information
-   */
-  async createTestnetAccount() {
-    if (this.serverType !== 'altnet') {
-      throw new Error('This function is only available on the altnet');
-    }
-
-    try {
-      // Fund a new account on the testnet
-      const fund_result = await this.client.fundWallet();
-      const test_wallet = fund_result.wallet;
-
-      return {
-        address: test_wallet.address,
-        seed: test_wallet.seed,
-        balance: fund_result.balance,
-      };
-    } catch (error) {
-      console.error('Error creating testnet account:', error);
-      throw error;
-    }
-  }
-
-  public async fundWallet(wallet: Wallet): Promise<void> {
-    try {
-      const client = await this.getClient('no-reconnect');
-      const fund_result = await client.fundWallet();
-
-      const tx: Payment = {
-        TransactionType: 'Payment',
-        Account: fund_result.wallet.address,
-        Destination: wallet.address,
-        Amount: '1000000000',
-      };
-
-      await client.submitAndWait(tx, { wallet: fund_result.wallet });
-    } catch (error) {
-      console.error('Error funding wallet:', error);
-      throw error;
-    }
   }
 }

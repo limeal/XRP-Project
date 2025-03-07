@@ -2,19 +2,20 @@ import { EntityType, Item } from '@prisma/client';
 import { Context } from '../../app';
 import prisma from '../../prisma/client';
 import { storage } from '../../services/storage';
+import { XRPClient } from '../../xrpl/xrp-client';
 
 const itemResolvers = {
   Query: {
     items: async () => {
-      return await prisma.item.findMany();
+      return prisma.item.findMany();
     },
     item: async (_: any, { id }: { id: string }) => {
-      return await prisma.item.findUnique({
+      return prisma.item.findUnique({
         where: { id },
       });
     },
     userItems: async (_: any, { userId }: { userId: string }) => {
-      return await prisma.item.findMany({
+      return prisma.item.findMany({
         where: { owner_id: userId },
         include: {
           prices: {
@@ -25,7 +26,7 @@ const itemResolvers = {
       });
     },
     itemsForSale: async () => {
-      return await prisma.item.findMany({
+      return prisma.item.findMany({
         where: {
           prices: {
             some: {
@@ -44,12 +45,12 @@ const itemResolvers = {
   },
   Item: {
     owner: async (parent: any) => {
-      return await prisma.user.findUnique({
+      return prisma.user.findUnique({
         where: { id: parent.owner_id },
       });
     },
     comments: async (parent: any) => {
-      return await prisma.comment.findMany({
+      return prisma.comment.findMany({
         where: {
           entity_type: EntityType.ITEM,
           entity_id: parent.id,
@@ -57,7 +58,7 @@ const itemResolvers = {
       });
     },
     tags: async (parent: any) => {
-      return await prisma.tag.findMany({
+      return prisma.tag.findMany({
         where: {
           entity_type: EntityType.ITEM,
           entity_id: parent.id,
@@ -65,7 +66,7 @@ const itemResolvers = {
       });
     },
     prices: async (parent: any) => {
-      return await prisma.itemPrice.findMany({
+      return prisma.itemPrice.findMany({
         where: { item_id: parent.id },
       });
     },
@@ -104,7 +105,7 @@ const itemResolvers = {
         const imageUrl = await storage.saveFile(data.image, filename);
 
         // Create item in database
-        return await prisma.item.create({
+        return prisma.item.create({
           data: {
             name: data.name,
             description: data.description,
@@ -135,73 +136,42 @@ const itemResolvers = {
         where: { id },
       });
     },
-    putItemForSale: async (
-      _: any,
-      { itemId, price }: { itemId: string; price: string },
-      context: Context
-    ) => {
-      if (!context.user) {
-        throw new Error('Not authenticated');
-      }
-
-      const item = await prisma.item.findUnique({
-        where: { id: itemId },
-      });
-
-      if (!item) {
-        throw new Error('Item not found');
-      }
-
-      if (item.owner_id !== context.user.id) {
-        throw new Error('You do not own this item and cannot put it for sale');
-      }
-
-      return await prisma.itemPrice.create({
-        data: {
-          item_id: itemId,
-          price: BigInt(price),
-        },
-      });
-    },
     buyItem: async (
       _: any,
       { itemId }: { itemId: string },
       context: Context
     ) => {
-      if (!context.user) {
+      const { user, xrpHeaders } = context;
+      if (!user || !xrpHeaders) {
         throw new Error('Not authenticated');
       }
 
       const item = await prisma.item.findUnique({
-        where: { id: itemId },
+        where: { id: itemId, owner_id: { not: user.id } },
         include: {
           prices: true,
         },
       });
 
-      if (!item || !item.prices.length) {
+      if (!item || !item.prices.length || !item.prices[0].offer_xrp_id) {
         throw new Error('Item not found or not for sale');
       }
 
-      if (item.owner_id === context.user.id) {
-        throw new Error('Cannot buy your own item');
-      }
+      const xrpClient = new XRPClient({ mnemonic: xrpHeaders.mnemonic, address: xrpHeaders.address });
+      await xrpClient.acceptOfferForToken(
+        'sell',
+        item.prices[0].offer_xrp_id,
+      );
 
-      await prisma.itemPrice.deleteMany({
-        where: { item_id: itemId },
-      });
-
-      const updatedItem = await prisma.item.update({
-        where: { id: itemId },
-        data: {
-          owner_id: context.user.id,
-        },
-        include: {
-          owner: true,
-        },
-      });
-
-      return updatedItem;
+      return prisma.$transaction([
+        prisma.itemPrice.deleteMany({
+          where: { item_id: itemId },
+        }),
+        prisma.item.update({
+          where: { id: itemId },
+          data: { owner_id: user.id },
+        }),
+      ]);
     },
     publishItem: async (
       _: any,
@@ -211,7 +181,7 @@ const itemResolvers = {
       if (!context.user || !context.user.is_superadmin)
         throw new Error('Not authorized');
 
-      return await prisma.item.update({
+      return prisma.item.update({
         where: { id: itemId },
         data: { published: true },
         select: {
