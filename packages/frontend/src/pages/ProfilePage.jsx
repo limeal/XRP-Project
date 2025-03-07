@@ -1,6 +1,8 @@
 import { useQuery } from '@apollo/client'
+import LinkCrossmarkButton from '@components/LinkCrossmarkButton'
 import MonkeyList from '@components/MonkeyList'
 import userTags from '@constants/tags'
+import { useCrossmark } from '@context/CrossmarkContext'
 import { GET_USER_QUERY } from '@graphql/user'
 import {
   Avatar,
@@ -18,11 +20,14 @@ import { AuthContext } from '../context/AuthContext'
 const ProfilePage = () => {
   const { id } = useParams()
   const navigate = useNavigate()
+
+  const { unlinkWallet } = useCrossmark()
   const {
     user: loggedInUser,
     isAuthenticated: isOnline,
     logout,
   } = useContext(AuthContext)
+
   const isOwner = loggedInUser?.id === id
 
   const { loading, error, data } = useQuery(GET_USER_QUERY, {
@@ -45,21 +50,31 @@ const ProfilePage = () => {
         px: 3,
       }}
     >
-      <Button
-        variant="contained"
-        color="secondary"
-        onClick={() => navigate('/')}
+      <Box
         sx={{
           position: 'absolute',
-          top: 30,
-          left: 30,
-          fontSize: { xs: '0.8rem', md: '1rem' },
-          padding: { xs: '6px 12px', md: '8px 16px' },
-          zIndex: 10,
+          top: 20,
+          left: 20,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 1.5,
+          alignItems: 'flex-start',
         }}
       >
-        Home
-      </Button>
+        <Button
+          variant="contained"
+          color="secondary"
+          onClick={() => navigate('/')}
+          sx={{
+            fontSize: { xs: '0.8rem', md: '1rem' },
+            padding: { xs: '6px 12px', md: '8px 16px' },
+          }}
+        >
+          Home
+        </Button>
+
+        <LinkCrossmarkButton />
+      </Box>
       <Box
         sx={{
           display: 'flex',
@@ -138,6 +153,7 @@ const ProfilePage = () => {
           sx={{ mt: 4, fontSize: '1rem', px: 4 }}
           onClick={() => {
             logout()
+            unlinkWallet()
             navigate('/login')
           }}
         >
