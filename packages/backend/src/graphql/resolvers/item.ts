@@ -203,6 +203,25 @@ const itemResolvers = {
 
       return updatedItem;
     },
+    publishItem: async (
+      _: any,
+      { itemId }: { itemId: string },
+      context: Context
+    ) => {
+      if (!context.user || !context.user.is_superadmin)
+        throw new Error('Not authorized');
+
+      return await prisma.item.update({
+        where: { id: itemId },
+        data: { published: true },
+        select: {
+          id: true,
+          name: true,
+          published: true,
+          owner_id: true,
+        },
+      });
+    },
   },
 };
 

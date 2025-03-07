@@ -2,7 +2,11 @@ import { useMutation, useQuery } from '@apollo/client'
 import CustomButton from '@components/CustomButton'
 import SellModal from '@components/SellModal'
 import { AuthContext } from '@context/AuthContext'
-import { BUY_ITEM_MUTATION, GET_MONKEY_QUERY } from '@graphql/item'
+import {
+  BUY_ITEM_MUTATION,
+  GET_MONKEY_QUERY,
+  PUBLISH_ITEM_MUTATION,
+} from '@graphql/item'
 import { GET_USER_QUERY } from '@graphql/user'
 import {
   Box,
@@ -24,6 +28,13 @@ const MonkeyPage = () => {
     variables: { id },
   })
 
+  const [publishItem, { loading: publishing }] = useMutation(
+    PUBLISH_ITEM_MUTATION,
+    {
+      refetchQueries: [{ query: GET_MONKEY_QUERY, variables: { id } }],
+    }
+  )
+
   const [buyItem, { loading: buying, error: buyError }] = useMutation(
     BUY_ITEM_MUTATION,
     {
@@ -36,7 +47,7 @@ const MonkeyPage = () => {
 
   useEffect(() => {
     if (buyError) {
-      console.error('Error selling monkey:', buyError)
+      console.error('Error buying monkey:', buyError)
     }
   }, [buyError])
 
@@ -73,6 +84,15 @@ const MonkeyPage = () => {
   const isOwner = data?.item && loggedInUser?.id === data.item.owner.id
   const isForSale = data.item.prices?.length > 0
   const price = isForSale ? `${data.item.prices[0].price} XRP` : 'Not for Sale'
+
+  const handlePublish = async () => {
+    try {
+      await publishItem({ variables: { itemId: id } })
+      alert('Item published successfully!')
+    } catch (error) {
+      console.error('Error publishing item:', error)
+    }
+  }
 
   return (
     <Box sx={{ width: '100vw', minHeight: '100vh', position: 'relative' }}>
@@ -144,13 +164,22 @@ const MonkeyPage = () => {
           >
             {price}
           </Typography>
-          {isOwner && !isForSale && (
+          {isOwner && !data.item.published && (
+            <CustomButton
+              text={publishing ? 'Publishing...' : 'Publish'}
+              onClick={handlePublish}
+              color="purple"
+            />
+          )}
+
+          {isOwner && data.item.published && !isForSale && (
             <CustomButton
               text="Sell"
               onClick={() => setModalOpen(true)}
               color="blue"
             />
           )}
+
           {!isOwner && isForSale && (
             <CustomButton
               text={buying ? 'Buying...' : 'Buy'}

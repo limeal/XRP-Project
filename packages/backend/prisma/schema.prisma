@@ -29,6 +29,7 @@ model User {
   xrp_address   String?
   xrp_publicKey String?
   xrp_signature String?
+  is_superadmin Boolean   @default(false)
   last_login_at DateTime?
   items         Item[]
   

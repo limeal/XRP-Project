@@ -7,6 +7,7 @@ export const GET_MONKEY_QUERY = gql`
       name
       description
       image_url
+      published
       prices {
         price
       }
@@ -56,6 +57,15 @@ export const BUY_ITEM_MUTATION = gql`
         id
         price
       }
+    }
+  }
+`
+
+export const PUBLISH_ITEM_MUTATION = gql`
+  mutation PublishItem($itemId: String!) {
+    publishItem(itemId: $itemId) {
+      id
+      published
     }
   }
 `

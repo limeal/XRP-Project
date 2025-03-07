@@ -7,6 +7,7 @@ const typeDefs = `#graphql
   type User {
     id: String!
     username: String!
+    is_superadmin: Boolean!
     items: [Item!]!
   }
 
@@ -16,6 +17,7 @@ const typeDefs = `#graphql
     description: String!
     xrp_id: String
     image_url: String!
+    published: Boolean!
     owner_id: String!
     owner: User!
     comments: [Comment!]!
@@ -126,6 +128,8 @@ const typeDefs = `#graphql
     buyItem(itemId: String!): Item!
 
     linkCrossmark(userId: String!, xrpAddress: String!, publicKey: String!, signature: String): LinkCrossmarkResponse
+
+    publishItem(itemId: String!): Item!
   }
 `;
 
