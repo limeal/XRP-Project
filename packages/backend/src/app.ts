@@ -19,9 +19,10 @@ export type Context = {
   user?: User;
   xrpHeaders?: {
     address: string;
-    mnemonic: string;
   };
 };
+
+let sseClients: any[] = [];
 
 async function createApolloServer(app: express.Application) {
   const httpServer = http.createServer(app);
@@ -38,6 +39,26 @@ async function createApolloServer(app: express.Application) {
   });
   await server.start();
 
+  app.get('/sse', (req, res) => {
+    // Set SSE headers
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+  
+    // Add the current client to the list of connected clients
+    sseClients.push(res);
+  
+    // Send an initial message to the new client
+    res.write(`data: {"message": "Welcome to SSE!"}\n\n`);
+  
+    // Handle client disconnect
+    req.on('close', () => {
+      app.locals.sseClients = app.locals.sseClients.filter((client: any) => client !== res);
+      console.log('Client disconnected');
+    });
+  });
+
   app.use(passport.initialize() as RequestHandler);
 
   app.use(
@@ -46,7 +67,6 @@ async function createApolloServer(app: express.Application) {
       context: async ({ req }) => {
         const xrpHeaders = {
           address: req.headers['x-xrp-address'] as string,
-          mnemonic: req.headers['x-xrp-mnemonic'] as string,
         };
 
         console.log('xrpHeaders', xrpHeaders);
@@ -70,6 +90,18 @@ async function createApolloServer(app: express.Application) {
   );
 
   return { server, httpServer };
+}
+
+export function publishSSEEvent(message: string) {
+  const data = {
+    message: message,
+    timestamp: new Date().toISOString(),
+  };
+
+  // Send data to all connected clients
+  sseClients.forEach((client: any) => {
+    client.write(`data: ${JSON.stringify(data)}\n\n`);
+  });
 }
 
 function createApp() {

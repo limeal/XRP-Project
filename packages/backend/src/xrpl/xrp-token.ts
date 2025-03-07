@@ -18,7 +18,7 @@ export class XRPToken {
       | Omit<Item, 'id' | 'owner_id'>
   ) {
     if (this.isItem(data)) {
-      this.tokenData = {
+      this.tokenData = { 
         id: data.xrp_id ?? undefined,
         name: data.name,
         description: data.description,

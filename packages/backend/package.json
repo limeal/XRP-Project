@@ -20,6 +20,7 @@
   "description": "",
   "dependencies": {
     "@apollo/server": "^4.11.3",
+    "@pinata/sdk": "^2.1.0",
     "@prisma/client": "^6.4.1",
     "bcryptjs": "^3.0.2",
     "class-validator": "^0.14.1",
@@ -39,7 +40,8 @@
     "type-graphql": "^2.0.0-rc.2",
     "uuid": "^11.1.0",
     "winston": "^3.17.0",
-    "xrpl": "^4.2.0"
+    "xrpl": "^4.2.0",
+    "xumm": "^1.8.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",

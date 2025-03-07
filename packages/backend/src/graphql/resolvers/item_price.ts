@@ -44,7 +44,7 @@ const itemPriceResolvers = {
         throw new Error('Item not found');
       }
 
-      const xrpClient = new XRPClient({ mnemonic: xrpHeaders.mnemonic, address: xrpHeaders.address });
+      const xrpClient = new XRPClient(xrpHeaders.address);
       const offer = await xrpClient.createOfferForToken(
         'sell',
         `${data.price}`,

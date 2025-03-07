@@ -7,12 +7,15 @@ import {
   NFTokenCreateOffer,
   NFTokenCreateOfferFlags,
   NFTokenMint,
+  NFTokenMintFlags,
   Payment,
   SubmittableTransaction,
   TxResponse,
   Wallet,
 } from 'xrpl';
 import { XRPToken } from './xrp-token';
+import { Xumm } from 'xumm';
+import { publishSSEEvent } from '../app';
 
 interface IXRPClient {
   getServerType(): Promise<string>;
@@ -20,47 +23,34 @@ interface IXRPClient {
 
   // Equivalent to mint
   createNFTToken(
-    issuerSeed: string,
     token: XRPToken,
-    transactionOptions?: Pick<NFTokenMint, 'Flags' | 'TransferFee'>
-  ): Promise<TxResponse<NFTokenMint>>;
+  ): Promise<string>;
 
   createOfferForToken(
     type: 'sell' | 'buy',
     price: Amount,
     tokenId: string
-  ): Promise<TxResponse<NFTokenCreateOffer>>;
+  ): Promise<string>;
 
   acceptOfferForToken(
     type: 'sell' | 'buy',
     offerId: string
-  ): Promise<TxResponse<NFTokenAcceptOffer>>;
+  ): Promise<string>;
 
   getAccountTokens(accountAddress: string): Promise<Array<XRPToken>>;
   getAccountBalance(accountAddress: string): Promise<number>;
 }
 
+const xumm = new Xumm(process.env.XUMM_API_KEY!, process.env.XUMM_API_SECRET);
+
 export class XRPClient implements IXRPClient {
-  private serverType: 'devnet' | 'altnet';
   private client: Client;
-  private wallet: Wallet;
 
   constructor(
-    options: {
-      serverType?: 'devnet' | 'altnet'
-      mnemonic: string;
-      address: string;
-    } = {
-      serverType: 'altnet',
-      mnemonic: '',
-      address: '',
-    }
+    private readonly accountAddress: string,
+    private readonly serverType: 'devnet' | 'altnet' = 'altnet',
   ) {
-    this.serverType = options.serverType ?? 'altnet';
-    this.client = new Client(`wss://s.${options.serverType}.rippletest.net:51233`);
-    this.wallet = Wallet.fromMnemonic(options.mnemonic, {
-      masterAddress: options.address,
-    });
+    this.client = new Client(`wss://s.${this.serverType}.rippletest.net:51233`);
   }
 
   async connect() {
@@ -91,32 +81,30 @@ export class XRPClient implements IXRPClient {
   }
 
   /**
-   * Submits a transaction to the XRPL
+   * Subscribes to a payload and extracts the QR code
    *
-   * @param {SubmittableTransaction} transaction - The transaction to submit
-   * @param {Wallet} wallet - The wallet to sign the transaction
-   * @returns {Promise<TxResponse<T>>} The transaction result
+   * @param {any} payload - The payload to subscribe to
+   * @returns {Promise<string>} The QR code
    */
-  private async submitTransaction<T extends SubmittableTransaction>(
-    transaction: T
-  ) {
-    const client = await this.getClient();
-
-    return client.submitAndWait(transaction, {
-      wallet: this.wallet,
-    });
-  }
-
-  private async signAndSubmitTransaction<T extends SubmittableTransaction>(
-    transaction: T
-  ) {
-    const signedTransaction = this.wallet.sign(transaction);
-
-    const result = await this.client.submitAndWait(signedTransaction.tx_blob, {
-      wallet: this.wallet,
+  private async subscribeAndExtractMeta(payload: any) {
+    const result = await xumm.payload?.createAndSubscribe(payload, (event) => {
+      if (Object.keys(event.data).indexOf('signed') > -1) {
+        return event;
+      }
     });
 
-    return result as TxResponse<T>;
+    if (!result) {
+      throw new Error('Failed to create and subscribe to the payload');
+    }
+
+    publishSSEEvent(result?.created?.refs?.qr_png);
+
+    const resolved = await result.resolved;
+    const txId = (resolved as any).data.txid;
+
+    const tx = await this.getTransaction(txId);
+
+    return tx.result.meta;
   }
 
   /**
@@ -128,20 +116,19 @@ export class XRPClient implements IXRPClient {
    * @returns {Promise<TxResponse<NFTokenMint>>} The transaction result
    */
   async createNFTToken(
-    issuerSeed: string,
-    token: XRPToken,
-    transactionOptions?: Pick<NFTokenMint, 'Flags' | 'TransferFee'>
+    token: XRPToken
   ) {
-    return this.signAndSubmitTransaction<NFTokenMint>(
+    const meta = await this.subscribeAndExtractMeta(
       {
         TransactionType: 'NFTokenMint',
-        Account: this.wallet.address,
+        Account: this.accountAddress,
         URI: token.encode(),
         NFTokenTaxon: 0, // Required field, can be any value from 0 to 2^32-1
-        LastLedgerSequence: (await this.client.getLedgerIndex()) + 20,
-        ...transactionOptions,
+        Flags: NFTokenMintFlags.tfBurnable | NFTokenMintFlags.tfTransferable,
       }
     );
+
+    return (meta as any).nftoken_id;
   }
 
   /**
@@ -157,15 +144,17 @@ export class XRPClient implements IXRPClient {
     price: Amount,
     tokenId: string
   ) {
-    return this.signAndSubmitTransaction<NFTokenCreateOffer>(
+    const meta = await this.subscribeAndExtractMeta(
       {
         TransactionType: 'NFTokenCreateOffer',
-        Account: this.wallet.address,
+        Account: this.accountAddress,
         Amount: price,
         NFTokenID: tokenId,
         Flags: type === 'sell' ? NFTokenCreateOfferFlags.tfSellNFToken : 0,
       }
     );
+
+    return (meta as any).offer_id;
   }
 
   /**
@@ -179,14 +168,29 @@ export class XRPClient implements IXRPClient {
     type: 'sell' | 'buy',
     offerId: string
   ) {
-    return this.signAndSubmitTransaction<NFTokenAcceptOffer>(
+    const meta = await this.subscribeAndExtractMeta(
       {
         TransactionType: 'NFTokenAcceptOffer',
-        Account: this.wallet.address,
+        Account: this.accountAddress,
         NFTokenSellOffer: type === 'sell' ? offerId : undefined,
         NFTokenBuyOffer: type === 'buy' ? offerId : undefined,
       }
     );
+
+    return 'OK';
+  }
+
+  /**
+   * Gets a transaction from the XRPL
+   *
+   * @param {string} transactionId - The ID of the transaction to get
+   * @returns {Promise<TxResponse<any>>} The transaction result
+   */
+  async getTransaction(transactionId: string) {
+    return this.client.request({
+      command: 'tx',
+      transaction: transactionId,
+    });
   }
 
   /**
