@@ -5,7 +5,7 @@ import { storage } from '../services/storage';
 
 const prisma = new PrismaClient();
 
-const adminId = '9e93ad2f-cda6-49c6-9e71-ea6773872999'; // Admin ID
+const adminId = '34a132b6-0921-4a66-bcff-5d2e72a03c11'; // Admin ID
 
 const monkeys = [
   {
