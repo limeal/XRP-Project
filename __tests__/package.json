@@ -1,0 +1,19 @@
+{
+  "name": "__tests__",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "ts-node main.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/qrcode-terminal": "^0.12.2",
+    "qrcode-terminal": "^0.12.0",
+    "xrpl": "^4.2.0",
+    "xumm": "^1.8.0"
+  }
+}
