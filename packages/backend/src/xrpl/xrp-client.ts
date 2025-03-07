@@ -58,7 +58,7 @@ export class XRPClient implements IXRPClient {
   ) {
     this.serverType = options.serverType ?? 'altnet';
     this.client = new Client(`wss://s.${options.serverType}.rippletest.net:51233`);
-    this.wallet = Wallet.fromSeed(options.mnemonic, {
+    this.wallet = Wallet.fromMnemonic(options.mnemonic, {
       masterAddress: options.address,
     });
   }
