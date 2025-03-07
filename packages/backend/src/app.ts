@@ -54,7 +54,7 @@ async function createApolloServer(app: express.Application) {
   
     // Handle client disconnect
     req.on('close', () => {
-      app.locals.sseClients = app.locals.sseClients.filter((client: any) => client !== res);
+      sseClients = sseClients.filter((client: any) => client !== res);
       console.log('Client disconnected');
     });
   });
