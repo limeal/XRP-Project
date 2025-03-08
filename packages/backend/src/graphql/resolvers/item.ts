@@ -4,7 +4,6 @@ import prisma from '../../prisma/client';
 import { storage } from '../../services/storage';
 import { XRPClient } from '../../xrpl/xrp-client';
 import { FileUpload } from 'graphql-upload-ts';
-import { XRPToken } from '../../xrpl/xrp-token';
 
 const itemResolvers = {
   Query: {
@@ -131,8 +130,8 @@ const itemResolvers = {
       { itemId }: { itemId: string },
       context: Context
     ) => {
-      const { user, xrpHeaders } = context;
-      if (!user || !xrpHeaders) {
+      const { user } = context;
+      if (!user) {
         throw new Error('Not authenticated');
       }
 
@@ -147,7 +146,7 @@ const itemResolvers = {
         throw new Error('Item not found or not for sale');
       }
 
-      const xrpClient = new XRPClient(xrpHeaders.address);
+      const xrpClient = new XRPClient();
       await xrpClient.acceptOfferForToken(
         'sell',
         item.prices[0].offer_xrp_id,
@@ -168,7 +167,7 @@ const itemResolvers = {
       { itemId }: { itemId: string },
       context: Context
     ) => {
-      if (!context.user || !context.user.is_superadmin || !context.xrpHeaders)
+      if (!context.user || !context.user.is_superadmin)
         throw new Error('Not authorized');
 
       const item = await prisma.item.findUnique({
@@ -178,7 +177,7 @@ const itemResolvers = {
       if (!item)
         throw new Error('Item not found');
 
-      const xrpClient = new XRPClient(context.xrpHeaders?.address);
+      const xrpClient = new XRPClient();
       const tokenId = await xrpClient.createNFTToken(item.image_url);
 
       return prisma.item.update({

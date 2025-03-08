@@ -47,7 +47,6 @@ export class XRPClient implements IXRPClient {
   private client: Client;
 
   constructor(
-    private readonly accountAddress: string,
     private readonly serverType: 'devnet' | 'altnet' = 'altnet',
   ) {
     this.client = new Client(`wss://s.${this.serverType}.rippletest.net:51233`);
@@ -122,7 +121,6 @@ export class XRPClient implements IXRPClient {
     const meta = await this.subscribeAndExtractMeta(
       {
         TransactionType: 'NFTokenMint',
-        Account: this.accountAddress,
         URI: convertStringToHex(imageUrl),
         NFTokenTaxon: 0, // Required field, can be any value from 0 to 2^32-1
         Flags: NFTokenMintFlags.tfBurnable | NFTokenMintFlags.tfTransferable,
@@ -150,7 +148,6 @@ export class XRPClient implements IXRPClient {
     const meta = await this.subscribeAndExtractMeta(
       {
         TransactionType: 'NFTokenCreateOffer',
-        Account: this.accountAddress,
         Amount: price,
         NFTokenID: tokenId,
         Flags: type === 'sell' ? NFTokenCreateOfferFlags.tfSellNFToken : 0,
@@ -174,7 +171,6 @@ export class XRPClient implements IXRPClient {
     const meta = await this.subscribeAndExtractMeta(
       {
         TransactionType: 'NFTokenAcceptOffer',
-        Account: this.accountAddress,
         NFTokenSellOffer: type === 'sell' ? offerId : undefined,
         NFTokenBuyOffer: type === 'buy' ? offerId : undefined,
       }

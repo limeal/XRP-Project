@@ -28,8 +28,8 @@ const itemPriceResolvers = {
       data: Pick<ItemPrice, 'item_id' | 'price'>,
       context: Context
     ) => {
-      const { user, xrpHeaders } = context;
-      if (!user || !xrpHeaders) {
+      const { user } = context;
+      if (!user) {
         throw new Error('User not found');
       }
 
@@ -44,7 +44,7 @@ const itemPriceResolvers = {
         throw new Error('Item not found');
       }
 
-      const xrpClient = new XRPClient(xrpHeaders.address);
+      const xrpClient = new XRPClient();
       const offer_id = await xrpClient.createOfferForToken(
         'sell',
         `${data.price}`,
