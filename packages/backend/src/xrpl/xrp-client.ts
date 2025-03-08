@@ -102,8 +102,11 @@ export class XRPClient implements IXRPClient {
     const resolved = await result.resolved;
     const txId = (resolved as any).data.txid;
 
+    console.log('Transaction ID:', txId);
+
     const tx = await this.getTransaction(txId);
 
+    console.log('Transaction:', tx);
     return tx.result.meta;
   }
 
@@ -126,7 +129,9 @@ export class XRPClient implements IXRPClient {
       }
     );
 
-    return (meta as any).nftoken_id;
+    const nftokenId = (meta as any).nftoken_id;
+    console.log('NFToken ID:', nftokenId);
+    return nftokenId;
   }
 
   /**
@@ -185,10 +190,15 @@ export class XRPClient implements IXRPClient {
    * @returns {Promise<TxResponse<any>>} The transaction result
    */
   async getTransaction(transactionId: string) {
-    return this.client.request({
+    await this.client.connect();
+
+    const response = await this.client.request({
       command: 'tx',
       transaction: transactionId,
     });
+
+    await this.client.disconnect();
+    return response;
   }
 
   /**
