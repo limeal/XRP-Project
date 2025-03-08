@@ -190,10 +190,15 @@ export class XRPClient implements IXRPClient {
    * @returns {Promise<TxResponse<any>>} The transaction result
    */
   async getTransaction(transactionId: string) {
-    return this.client.request({
+    await this.client.connect();
+
+    const response = await this.client.request({
       command: 'tx',
       transaction: transactionId,
     });
+
+    await this.client.disconnect();
+    return response;
   }
 
   /**
