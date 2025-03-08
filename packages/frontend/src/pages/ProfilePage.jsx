@@ -1,8 +1,6 @@
 import { useQuery } from '@apollo/client'
-import LinkCrossmarkButton from '@components/LinkCrossmarkButton'
 import MonkeyList from '@components/MonkeyList'
 import userTags from '@constants/tags'
-import { useCrossmark } from '@context/CrossmarkContext'
 import { GET_USER_QUERY } from '@graphql/user'
 import {
   Avatar,
@@ -21,7 +19,6 @@ const ProfilePage = () => {
   const { id } = useParams()
   const navigate = useNavigate()
 
-  const { unlinkWallet } = useCrossmark()
   const {
     user: loggedInUser,
     isAuthenticated: isOnline,
@@ -72,8 +69,6 @@ const ProfilePage = () => {
         >
           Home
         </Button>
-
-        <LinkCrossmarkButton />
       </Box>
       <Box
         sx={{
@@ -153,7 +148,6 @@ const ProfilePage = () => {
           sx={{ mt: 4, fontSize: '1rem', px: 4 }}
           onClick={() => {
             logout()
-            unlinkWallet()
             navigate('/login')
           }}
         >
