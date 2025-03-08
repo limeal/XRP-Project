@@ -45,7 +45,7 @@ const itemPriceResolvers = {
       }
 
       const xrpClient = new XRPClient(xrpHeaders.address);
-      const offer = await xrpClient.createOfferForToken(
+      const offer_id = await xrpClient.createOfferForToken(
         'sell',
         `${data.price}`,
         item.xrp_id ?? ''
@@ -54,7 +54,7 @@ const itemPriceResolvers = {
       return await prisma.itemPrice.create({
         data: {
           ...data,
-          offer_xrp_id: `${offer.id}`,
+          offer_xrp_id: offer_id,
         },
       });
     },
