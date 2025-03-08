@@ -1,20 +1,25 @@
-import { Box, Modal, Typography } from '@mui/material'
+/* eslint-disable react/prop-types */
+import { Box, Button, Modal, Typography } from '@mui/material'
 
-// eslint-disable-next-line react/prop-types
-const QrCodeModal = ({ open, onClose, qrCodeUrl, title = 'Scan QR Code' }) => {
+const QrCodeModal = ({
+  open,
+  handleClose,
+  qrCodeUrl,
+  title = 'Scan QR Code',
+}) => {
   return (
-    <Modal open={open} onClose={onClose}>
+    <Modal open={open} onClose={handleClose}>
       <Box
         sx={{
           position: 'absolute',
           top: '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
+          width: 300,
           bgcolor: 'white',
-          p: 3,
-          borderRadius: 1,
+          borderRadius: 2,
           boxShadow: 24,
-          minWidth: 300,
+          p: 3,
           textAlign: 'center',
         }}
       >
@@ -23,16 +28,27 @@ const QrCodeModal = ({ open, onClose, qrCodeUrl, title = 'Scan QR Code' }) => {
         </Typography>
 
         {qrCodeUrl ? (
-          <img
-            src={qrCodeUrl}
-            alt="QR Code"
-            style={{ width: '100%', height: 'auto' }}
-          />
+          <Box sx={{ mb: 2 }}>
+            <img
+              src={qrCodeUrl}
+              alt="Xumm QR Code"
+              style={{ width: '100%', height: 'auto' }}
+            />
+          </Box>
         ) : (
-          <Typography variant="body1" color="error">
+          <Typography variant="body1" color="error" sx={{ mb: 2 }}>
             No QR code available
           </Typography>
         )}
+
+        <Button
+          variant="outlined"
+          color="error"
+          onClick={handleClose}
+          fullWidth
+        >
+          Close
+        </Button>
       </Box>
     </Modal>
   )

@@ -4,6 +4,7 @@ import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHt
 import { User } from '@prisma/client';
 import cors from 'cors';
 import express, { RequestHandler } from 'express';
+import { graphqlUploadExpress } from 'graphql-upload-ts';
 import helmet from 'helmet';
 import http from 'http';
 import morgan from 'morgan';
@@ -12,7 +13,6 @@ import path from 'path';
 import './config/passport';
 import { resolvers, typeDefs } from './graphql';
 import logger from './utils/logger';
-import { graphqlUploadExpress } from "graphql-upload-ts";
 
 export type Context = {
   req: express.Request;
@@ -42,13 +42,13 @@ async function createApolloServer(app: express.Application) {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders();
-  
+
     // Add the current client to the list of connected clients
     sseClients.push(res);
-  
+
     // Send an initial message to the new client
     res.write(`data: {"message": "Welcome to SSE!"}\n\n`);
-  
+
     // Handle client disconnect
     req.on('close', () => {
       sseClients = sseClients.filter((client: any) => client !== res);
@@ -103,7 +103,12 @@ function createApp() {
     cors({
       origin: '*',
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization'],
+      allowedHeaders: [
+        'Content-Type',
+        'Authorization',
+        'x-xrp-address',
+        'apollo-require-preflight',
+      ],
       exposedHeaders: ['Content-Disposition'], // Pour les téléchargements
     })
   );
@@ -117,13 +122,15 @@ function createApp() {
 
   app.use(morgan('dev'));
   app.use(express.json());
-  app.use(graphqlUploadExpress({
-    maxFileSize: 10000000,
-    maxFiles: 10,
-    // If you are using framework around express like [ NestJS or Apollo Serve ]
-    // use this options overrideSendResponse to allow nestjs to handle response errors like throwing exceptions
-    overrideSendResponse: false
-  }));
+  app.use(
+    graphqlUploadExpress({
+      maxFileSize: 10000000,
+      maxFiles: 10,
+      // If you are using framework around express like [ NestJS or Apollo Serve ]
+      // use this options overrideSendResponse to allow nestjs to handle response errors like throwing exceptions
+      overrideSendResponse: false,
+    })
+  );
 
   // Serve uploaded files - doit être après CORS et Helmet
   const uploadsPath = path.join(__dirname, '../uploads');

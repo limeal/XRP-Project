@@ -1,17 +1,44 @@
-/* eslint-disable react/prop-types */
-import { Box, Button, Modal, Typography } from '@mui/material'
+import { useMutation } from '@apollo/client'
+import { CREATE_ITEM_PRICE_MUTATION, GET_MONKEY_QUERY } from '@graphql/item'
+import { Box, Button, Modal, TextField, Typography } from '@mui/material'
+import { useState } from 'react'
 
-const QrCodeModal = ({
-  open,
-  handleClose,
-  qrCodeUrl,
-  title = 'Scan QR Code',
-}) => {
+// eslint-disable-next-line react/prop-types
+const SellModal = ({ open, handleClose, itemId }) => {
+  const [price, setPrice] = useState('')
+  const [putItemForSale, { loading, error }] = useMutation(
+    CREATE_ITEM_PRICE_MUTATION,
+    {
+      refetchQueries: [{ query: GET_MONKEY_QUERY, variables: { id: itemId } }],
+    }
+  )
+
+  const handleSubmit = async () => {
+    if (!price) return
+
+    try {
+      await putItemForSale({
+        variables: {
+          itemId,
+          price: price.toString(),
+        },
+      })
+      handleClose()
+    } catch (error) {
+      console.error('Error selling monkey:', error)
+    }
+  }
+
+  const handleCancel = () => {
+    setPrice('')
+    handleClose()
+  }
+
   return (
     <Modal
       open={open}
-      onClose={handleClose}
-      aria-labelledby="qrcode-modal-title"
+      onClose={handleCancel}
+      aria-labelledby="sell-modal-title"
     >
       <Box
         sx={{
@@ -27,35 +54,45 @@ const QrCodeModal = ({
           textAlign: 'center',
         }}
       >
-        <Typography id="qrcode-modal-title" variant="h6" sx={{ mb: 2 }}>
-          {title}
+        <Typography id="sell-modal-title" variant="h6" sx={{ mb: 2 }}>
+          Set Selling Price (XRP)
         </Typography>
-
-        {qrCodeUrl ? (
-          <Box sx={{ mb: 2 }}>
-            <img
-              src={qrCodeUrl}
-              alt="Xumm QR Code"
-              style={{ width: '100%', height: 'auto' }}
-            />
-          </Box>
-        ) : (
-          <Typography variant="body1" color="error" sx={{ mb: 2 }}>
-            No QR code available
+        <TextField
+          fullWidth
+          label="Price in XRP"
+          variant="outlined"
+          type="number"
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          sx={{ mb: 2 }}
+        />
+        {error && (
+          <Typography color="error" sx={{ mb: 2 }}>
+            {error.message}
           </Typography>
         )}
-
-        <Button
-          variant="outlined"
-          color="error"
-          onClick={handleClose}
-          fullWidth
-        >
-          Close
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'space-between' }}>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleSubmit}
+            fullWidth
+            disabled={loading}
+          >
+            {loading ? 'Selling...' : 'Sell'}
+          </Button>
+          <Button
+            variant="outlined"
+            color="error"
+            onClick={handleCancel}
+            fullWidth
+          >
+            Cancel
+          </Button>
+        </Box>
       </Box>
     </Modal>
   )
 }
 
-export default QrCodeModal
+export default SellModal

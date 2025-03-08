@@ -1,3 +1,4 @@
+import { Box, CircularProgress } from '@mui/material'
 import { useEffect, useState } from 'react'
 import { AuthContext } from './AuthContext'
 
@@ -5,12 +6,14 @@ import { AuthContext } from './AuthContext'
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [token, setToken] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const savedToken = localStorage.getItem('token')
     const savedUser = localStorage.getItem('user')
     if (savedToken) setToken(savedToken)
     if (savedUser) setUser(JSON.parse(savedUser))
+    setLoading(false)
   }, [])
 
   const login = (token, userObj) => {
@@ -29,6 +32,20 @@ export const AuthProvider = ({ children }) => {
 
   const isAuthenticated = user != null
 
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+        }}
+      >
+        <CircularProgress size={80} />
+      </Box>
+    )
+  }
   return (
     <AuthContext.Provider
       value={{ user, token, isAuthenticated, login, logout }}

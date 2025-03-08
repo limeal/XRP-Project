@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from '@apollo/client'
 import CustomButton from '@components/CustomButton'
+import QrCodeModal from '@components/QrCodeModal'
 import SellModal from '@components/SellModal'
 import { AuthContext } from '@context/AuthContext'
 import {
@@ -21,8 +22,11 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 const MonkeyPage = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const [isModalOpen, setModalOpen] = useState(false)
+  const [isSellingModalOpen, setSellingModalOpen] = useState(false)
+  const [qrModalOpen, setQrModalOpen] = useState(false)
+  const [qrUrl, setQrUrl] = useState(null)
   const { user: loggedInUser } = useContext(AuthContext)
+  const [operationCancel, setOperationCancel] = useState(false)
 
   const { loading, error, data } = useQuery(GET_MONKEY_QUERY, {
     variables: { id },
@@ -35,21 +39,35 @@ const MonkeyPage = () => {
     }
   )
 
-  const [buyItem, { loading: buying, error: buyError }] = useMutation(
-    BUY_ITEM_MUTATION,
-    {
-      refetchQueries: [
-        { query: GET_MONKEY_QUERY, variables: { id } },
-        { query: GET_USER_QUERY, variables: { id: loggedInUser.id } },
-      ],
-    }
-  )
+  const [buyItem, { loading: buying }] = useMutation(BUY_ITEM_MUTATION, {
+    refetchQueries: [
+      { query: GET_MONKEY_QUERY, variables: { id } },
+      { query: GET_USER_QUERY, variables: { id: loggedInUser.id } },
+    ],
+  })
 
   useEffect(() => {
-    if (buyError) {
-      console.error('Error buying monkey:', buyError)
+    const sse = new EventSource('http://localhost:3000/sse')
+    console.log('Connecting to SSE...')
+
+    sse.onmessage = (e) => {
+      console.log('SSE onmessage:', e.data)
+      const data = JSON.parse(e.data)
+
+      if (data.message && data.message.includes('https://')) {
+        setQrUrl(data.message)
+        setQrModalOpen(true)
+      }
     }
-  }, [buyError])
+
+    sse.onerror = (err) => {
+      console.error('SSE error:', err)
+    }
+
+    return () => {
+      sse.close()
+    }
+  }, [])
 
   if (loading)
     return (
@@ -86,12 +104,50 @@ const MonkeyPage = () => {
   const price = isForSale ? `${data.item.prices[0].price} XRP` : 'Not for Sale'
 
   const handlePublish = async () => {
+    setOperationCancel(false)
     try {
-      await publishItem({ variables: { itemId: id } })
+      const result = await publishItem({ variables: { itemId: id } })
+      if (operationCancel) {
+        alert('Publish operation cancelled.')
+        return
+      }
+      if (result.data.publishItem.qrCodeUrl) {
+        setQrUrl(result.data.publishItem.qrCodeUrl)
+        setQrModalOpen(true)
+      }
       alert('Item published successfully!')
     } catch (error) {
       console.error('Error publishing item:', error)
+      alert(error.message)
+    } finally {
+      handleCloseQrModal()
     }
+  }
+
+  const handleBuy = async () => {
+    setOperationCancel(false)
+    try {
+      const result = await buyItem({ variables: { itemId: id } })
+      if (operationCancel) {
+        alert('Buy operation cancelled.')
+        return
+      }
+      if (result.data.buyItem.qrCodeUrl) {
+        setQrUrl(result.data.buyItem.qrCodeUrl)
+        setQrModalOpen(true)
+      }
+      alert('Item bought successfully!')
+    } catch (error) {
+      console.error('Error buying item:', error)
+      alert(error.message)
+    } finally {
+      handleCloseQrModal()
+    }
+  }
+
+  const handleCloseQrModal = () => {
+    setQrModalOpen(false)
+    setOperationCancel(true)
   }
 
   return (
@@ -171,19 +227,17 @@ const MonkeyPage = () => {
               color="purple"
             />
           )}
-
           {isOwner && data.item.published && !isForSale && (
             <CustomButton
               text="Sell"
-              onClick={() => setModalOpen(true)}
+              onClick={() => setSellingModalOpen(true)}
               color="blue"
             />
           )}
-
           {!isOwner && isForSale && (
             <CustomButton
               text={buying ? 'Buying...' : 'Buy'}
-              onClick={() => buyItem({ variables: { itemId: id } })}
+              onClick={handleBuy}
               color="green"
             />
           )}
@@ -220,9 +274,15 @@ const MonkeyPage = () => {
           </Box>
         )}
 
+        <QrCodeModal
+          open={qrModalOpen}
+          handleClose={handleCloseQrModal}
+          qrCodeUrl={qrUrl}
+          title="Scan with Xumm"
+        />
         <SellModal
-          open={isModalOpen}
-          handleClose={() => setModalOpen(false)}
+          open={isSellingModalOpen}
+          handleClose={() => setSellingModalOpen(false)}
           itemId={id}
         />
       </Container>

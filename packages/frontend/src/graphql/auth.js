@@ -25,15 +25,3 @@ export const SIGNUP_MUTATION = gql`
     }
   }
 `
-
-export const LINK_CROSSMARK = gql`
-  mutation LinkCrossmark($userId: String!) {
-    linkCrossmark(userId: $userId) {
-      success
-      walletAddress
-      publicKey
-      signature
-      error
-    }
-  }
-`

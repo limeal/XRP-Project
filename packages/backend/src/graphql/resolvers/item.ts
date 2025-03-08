@@ -1,9 +1,9 @@
 import { EntityType, Item } from '@prisma/client';
+import { FileUpload } from 'graphql-upload-ts';
 import { Context } from '../../app';
 import prisma from '../../prisma/client';
 import { storage } from '../../services/storage';
 import { XRPClient } from '../../xrpl/xrp-client';
-import { FileUpload } from 'graphql-upload-ts';
 
 const itemResolvers = {
   Query: {
@@ -82,7 +82,11 @@ const itemResolvers = {
   Mutation: {
     createItem: async (
       _: any,
-      { name, description, image }: { name: string; description: string; image: FileUpload },
+      {
+        name,
+        description,
+        image,
+      }: { name: string; description: string; image: FileUpload },
       context: Context
     ) => {
       try {
@@ -135,8 +139,11 @@ const itemResolvers = {
         throw new Error('Not authenticated');
       }
 
-      const item = await prisma.item.findUnique({
-        where: { id: itemId, owner_id: { not: user.id } },
+      const item = await prisma.item.findFirst({
+        where: {
+          id: itemId,
+          owner_id: { not: user.id },
+        },
         include: {
           prices: true,
         },
@@ -147,20 +154,16 @@ const itemResolvers = {
       }
 
       const xrpClient = new XRPClient();
-      await xrpClient.acceptOfferForToken(
-        'sell',
-        item.prices[0].offer_xrp_id,
-      );
+      await xrpClient.acceptOfferForToken('sell', item.prices[0].offer_xrp_id);
 
-      return prisma.$transaction([
-        prisma.itemPrice.deleteMany({
-          where: { item_id: itemId },
-        }),
+      const [, updatedItem] = await prisma.$transaction([
+        prisma.itemPrice.deleteMany({ where: { item_id: itemId } }),
         prisma.item.update({
           where: { id: itemId },
           data: { owner_id: user.id },
         }),
       ]);
+      return updatedItem;
     },
     publishItem: async (
       _: any,
@@ -174,8 +177,7 @@ const itemResolvers = {
         where: { id: itemId },
       });
 
-      if (!item)
-        throw new Error('Item not found');
+      if (!item) throw new Error('Item not found');
 
       const xrpClient = new XRPClient();
       const tokenId = await xrpClient.createNFTToken(item.image_url);
